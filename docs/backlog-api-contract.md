@@ -21,7 +21,7 @@ Contents:
 6. [Scoring spec (SCORING.md)](#6-scoring-spec-scoringmd)
 7. [Error format and status codes](#7-error-format-and-status-codes)
 8. [What the MCP does on an API-1 server](#8-what-the-mcp-does-on-an-api-1-server)
-9. [Decisions for review](#9-decisions-for-review)
+9. [Decisions](#9-decisions)
 
 ---
 
@@ -174,7 +174,7 @@ proves nothing.
 Note on granularity: triage and notes PUTs change one game, but the ETag covers the whole map.
 An `If-Match` there fails if *any* game changed. That's correct but coarse, so the MCP sends
 `If-Match` only on `PUT /api/order` (a whole-list replace, where lost updates are real) and
-relies on §3.2 for triage and notes. See [§9 D1](#9-decisions-for-review).
+relies on §3.2 for triage and notes. See [§9 D1](#9-decisions).
 
 ### 3.2 Success responses
 
@@ -663,9 +663,10 @@ So PR B can ship before PR A, the MCP degrades as follows when `X-Backlog-Api` i
 
 ---
 
-## 9. Decisions for review
+## 9. Decisions
 
-These go beyond, or differ from, section 3 of the design doc. Each is a proposal; veto any.
+These go beyond, or differ from, section 3 of the design doc. All were **accepted on
+2026-11-03**, D9 with the "match the page" option.
 
 - **D1. `If-Match` scope.** The design doc asks for `If-Match` on triage and order. Triage (and
   notes) PUTs are per-game patches, so a whole-map precondition would fail on unrelated changes.
@@ -689,7 +690,6 @@ These go beyond, or differ from, section 3 of the design doc. Each is a proposal
   pending and unknown never pass a minimum unless `include_unknown`).
 - **D9. "Next-lane games come first."** Design doc §4 (`backlog_suggest_picks`) and §7 (server
   instructions) say Up-next games always rank first, "as on the page". The page doesn't do that:
-  it sorts picks by score alone, and the +100 bonus usually but not always wins (§6.4). Proposal:
-  the MCP matches the page (score only) and the server instructions say "next-lane games get a
-  large bonus" instead of "always rank first". The alternative is to change the page to pin
-  Up-next games first; that would be a page change in PR A and new score vectors.
+  it sorts picks by score alone, and the +100 bonus usually but not always wins (§6.4).
+  Decision: the MCP matches the page (score only), and the server instructions say "next-lane
+  games get a large bonus" instead of "always rank first". The page doesn't change.
