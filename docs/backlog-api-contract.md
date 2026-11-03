@@ -670,7 +670,7 @@ These go beyond, or differ from, section 3 of the design doc. All were **accepte
 
 - **D1. `If-Match` scope.** The design doc asks for `If-Match` on triage and order. Triage (and
   notes) PUTs are per-game patches, so a whole-map precondition would fail on unrelated changes.
-  Proposal: support `If-Match` on all three for uniformity, but the MCP only sends it on order;
+  Decision: support `If-Match` on all three for uniformity, but the MCP only sends it on order;
   for triage and notes the server returns `previous` from under the lock (§3.2), which makes
   "every write returns the previous value" atomic.
 - **D2. Notes get ETags too.** Not in the design doc; added for uniformity and so `set_note` can
