@@ -1,0 +1,31 @@
+#!/sbin/openrc-run
+# OpenRC service for mcp-server-steam-backlog (Streamable HTTP). Installed as
+# /etc/init.d/mcp-server-steam-backlog by install.sh. Every setting lives in
+# /etc/mcp-server-steam-backlog/env.
+
+name="mcp-server-steam-backlog"
+description="MCP server for Steam Backlog Triage, over Streamable HTTP"
+
+# supervise-daemon restarts the server if it exits (respawn_* below).
+supervisor="supervise-daemon"
+# run.sh loads the env file, then execs the CLI with these arguments. --http is an argument
+# here, not run.sh's default, so `mcp-server-steam-backlog` with no arguments still speaks stdio.
+command="/opt/mcp-server-steam-backlog/run.sh"
+command_args="serve --http"
+command_user="mcp-steam-backlog:mcp-steam-backlog"
+directory="/var/lib/mcp-server-steam-backlog"
+output_log="/var/log/mcp-server-steam-backlog/server.log"
+error_log="/var/log/mcp-server-steam-backlog/server.log"
+respawn_delay=5
+respawn_max=10
+respawn_period=300
+
+depend() {
+	need net
+	after firewall backlog-triage
+}
+
+start_pre() {
+	checkpath --directory --mode 0750 --owner mcp-steam-backlog:mcp-steam-backlog /var/log/mcp-server-steam-backlog
+	checkpath --directory --mode 0700 --owner mcp-steam-backlog:mcp-steam-backlog /var/lib/mcp-server-steam-backlog
+}
