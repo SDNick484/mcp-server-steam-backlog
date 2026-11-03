@@ -1,0 +1,10 @@
+#!/bin/sh
+# /usr/local/bin/mcp-server-steam-backlog: run the CLI as user mcp-steam-backlog with its
+# settings. root drops to the user; the user itself (or anyone allowed to read the settings)
+# runs it directly.
+STATE=/var/lib/mcp-server-steam-backlog
+RUN=/opt/mcp-server-steam-backlog/run.sh
+if [ "$(id -u)" = 0 ]; then
+	HOME=$STATE exec su-exec mcp-steam-backlog "$RUN" "$@"
+fi
+exec "$RUN" "$@"

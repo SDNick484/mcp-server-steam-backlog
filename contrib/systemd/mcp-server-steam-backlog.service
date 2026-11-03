@@ -1,0 +1,37 @@
+# systemd unit for mcp-server-steam-backlog (Streamable HTTP), for hosts without OpenRC.
+# Install the package in a venv (python3 -m venv /opt/mcp-server-steam-backlog/venv &&
+# /opt/mcp-server-steam-backlog/venv/bin/pip install git+https://github.com/SDNick484/mcp-server-steam-backlog),
+# put deploy/alpine/env.example at /etc/mcp-server-steam-backlog/env (root:mcp-steam-backlog 0640), then:
+#   systemctl daemon-reload && systemctl enable --now mcp-server-steam-backlog
+[Unit]
+Description=MCP server for Steam Backlog Triage (Streamable HTTP)
+After=network-online.target backlog-triage.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=mcp-steam-backlog
+Group=mcp-steam-backlog
+EnvironmentFile=/etc/mcp-server-steam-backlog/env
+ExecStart=/opt/mcp-server-steam-backlog/venv/bin/mcp-server-steam-backlog serve --http
+Restart=on-failure
+RestartSec=5
+StateDirectory=mcp-server-steam-backlog
+WorkingDirectory=/var/lib/mcp-server-steam-backlog
+# It only needs to talk HTTP to the backlog server and listen on its port.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallArchitectures=native
+
+[Install]
+WantedBy=multi-user.target
