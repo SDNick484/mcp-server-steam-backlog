@@ -21,9 +21,9 @@ jobs:
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
-      # The contract tests also run against a real backlog_server.py from steam-backlog-triage.
-      # main is API 1 until PR A merges; after that, pin the merged commit here.
-      BACKLOG_REF: main
+      # The contract tests also run against a real backlog_server.py from steam-backlog-triage,
+      # pinned to its PR A merge commit (API 2). Bump it when the contract changes.
+      BACKLOG_REF: c2bb1590868ba05460e761b51f5a1370e00a2b46
       BACKLOG_REQUIRE_REAL: "1"
     steps:
       - uses: actions/checkout@v7

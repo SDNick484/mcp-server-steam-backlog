@@ -205,7 +205,7 @@ ruff check . && ruff format --check . && mypy && pytest --cov
 ```
 
 - The contract tests run against a fake, against the fake imitating API 1, and against a real
-  `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default `main`),
+  `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default: its PR A merge commit, set in `tests/conftest.py`),
   `BACKLOG_CHECKOUT=<dir>` uses a local checkout. See `docs/handoff-pr-a.md`.
 - `tests/fixtures/score_vectors.json` comes from `node scripts/gen_score_vectors.mjs path/to/backlog.html`.
   CI regenerates it and fails if the page's `score()` changed.

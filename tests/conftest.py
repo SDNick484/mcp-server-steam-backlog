@@ -5,7 +5,7 @@ contract tests also run against a real backlog_server.py (``real_backlog``):
 
   BACKLOG_CHECKOUT=/path/to/steam-backlog-triage   use that checkout as it is (e.g. PR A's branch)
   BACKLOG_REF=<branch, tag or sha>                 clone github.com/SDNick484/steam-backlog-triage at it
-                                                   (default: main, which is API 1 until PR A merges)
+                                                   (default: the PR A merge commit, API 2)
   BACKLOG_REQUIRE_REAL=1                           fail instead of skipping when it can't be had (CI)
 """
 
@@ -31,6 +31,8 @@ from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 BACKLOG_REPO = "https://github.com/SDNick484/steam-backlog-triage.git"
+# steam-backlog-triage's PR A merge commit (API 2). Bump it when the contract changes.
+DEFAULT_BACKLOG_REF = "c2bb1590868ba05460e761b51f5a1370e00a2b46"
 
 
 # Async tests use anyio's pytest plugin: the MCP SDK's in-process Client needs a fixture's setup
@@ -94,7 +96,7 @@ def _checkout(cache: Path) -> Path | None:
     local = os.environ.get("BACKLOG_CHECKOUT")
     if local:
         return Path(local).expanduser().resolve()
-    ref = os.environ.get("BACKLOG_REF", "main")
+    ref = os.environ.get("BACKLOG_REF", DEFAULT_BACKLOG_REF)
     dest = cache / f"steam-backlog-triage-{ref.replace('/', '_')}"
     if (dest / "backlog_server.py").exists():
         return dest
@@ -114,7 +116,7 @@ def _checkout(cache: Path) -> Path | None:
 def real_checkout(tmp_path_factory: pytest.TempPathFactory) -> Path:
     co = _checkout(tmp_path_factory.mktemp("checkouts"))
     if co is None or not (co / "backlog_server.py").exists():
-        msg = f"no steam-backlog-triage checkout (BACKLOG_REF={os.environ.get('BACKLOG_REF', 'main')})"
+        msg = f"no steam-backlog-triage checkout (BACKLOG_REF={os.environ.get('BACKLOG_REF', DEFAULT_BACKLOG_REF)})"
         if os.environ.get("BACKLOG_REQUIRE_REAL") == "1":
             pytest.fail(msg)
         pytest.skip(msg)
