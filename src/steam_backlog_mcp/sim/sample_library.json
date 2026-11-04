@@ -1,0 +1,1058 @@
+{
+ "schema": 2,
+ "source": "steam_backlog_export.py",
+ "exportedAt": "2026-11-02T12:00:00+00:00",
+ "steamid": "7656119XXXXXXXXXX",
+ "persona": "Sample Persona",
+ "games": [
+  {
+   "appid": 1055540,
+   "name": "A Short Hike",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 1.5,
+    "extra": 3,
+    "complete": 4
+   },
+   "genres": [
+    "Adventure",
+    "Cozy"
+   ],
+   "metacritic": null,
+   "year": 2019,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1086940,
+   "name": "Baldur's Gate 3",
+   "playtime": 100,
+   "deckPlaytime": 0,
+   "lastPlayed": 1772150400,
+   "deck": 3,
+   "hltb": {
+    "main": 75,
+    "extra": 110,
+    "complete": 150
+   },
+   "genres": [
+    "RPG",
+    "Turn-based"
+   ],
+   "metacritic": 96,
+   "year": 2023,
+   "controller": "partial",
+   "proton": {
+    "tier": "platinum",
+    "total": 3100
+   }
+  },
+  {
+   "appid": 504230,
+   "name": "Celeste",
+   "playtime": 310,
+   "deckPlaytime": 310,
+   "lastPlayed": 1759190400,
+   "deck": 3,
+   "hltb": {
+    "main": 8,
+    "extra": 13,
+    "complete": 37
+   },
+   "genres": [
+    "Platformer"
+   ],
+   "metacritic": 94,
+   "year": 2018,
+   "controller": "full",
+   "proton": null
+  },
+  {
+   "appid": 1229240,
+   "name": "Chained Echoes",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 38,
+    "extra": 50,
+    "complete": 60
+   },
+   "genres": [
+    "RPG",
+    "Turn-based"
+   ],
+   "metacritic": null,
+   "year": 2022,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1497440,
+   "name": "COCOON",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 5,
+    "extra": 5.5,
+    "complete": 6
+   },
+   "genres": [
+    "Puzzle",
+    "Adventure"
+   ],
+   "metacritic": 88,
+   "year": 2023,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 870780,
+   "name": "Control Ultimate Edition",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 12,
+    "extra": 20,
+    "complete": 35
+   },
+   "genres": [
+    "Action",
+    "Shooter"
+   ],
+   "metacritic": 85,
+   "year": 2019,
+   "controller": null,
+   "proton": {
+    "tier": "gold",
+    "total": 980
+   }
+  },
+  {
+   "appid": 1091500,
+   "name": "Cyberpunk 2077",
+   "playtime": 70,
+   "deckPlaytime": 0,
+   "lastPlayed": 1741910400,
+   "deck": 3,
+   "hltb": {
+    "main": 25,
+    "extra": 60,
+    "complete": 105
+   },
+   "genres": [
+    "RPG",
+    "Action"
+   ],
+   "metacritic": 86,
+   "year": 2020,
+   "controller": "partial",
+   "proton": {
+    "tier": "borked",
+    "total": 500
+   }
+  },
+  {
+   "appid": 1868140,
+   "name": "DAVE THE DIVER",
+   "playtime": 40,
+   "deckPlaytime": 40,
+   "lastPlayed": 1788566400,
+   "deck": 3,
+   "hltb": {
+    "main": 25,
+    "extra": 35,
+    "complete": 50
+   },
+   "genres": [
+    "Adventure",
+    "Management"
+   ],
+   "metacritic": 90,
+   "year": 2023,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 588650,
+   "name": "Dead Cells",
+   "playtime": 60,
+   "deckPlaytime": 60,
+   "lastPlayed": 1767830400,
+   "deck": 3,
+   "hltb": {
+    "main": 20,
+    "extra": 40,
+    "complete": 100
+   },
+   "genres": [
+    "Action",
+    "Roguelike"
+   ],
+   "metacritic": 87,
+   "year": 2018,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1190460,
+   "name": "DEATH STRANDING",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 41,
+    "extra": 63,
+    "complete": 100
+   },
+   "genres": [
+    "Action",
+    "Adventure"
+   ],
+   "metacritic": 82,
+   "year": 2020,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1085660,
+   "name": "Destiny 2",
+   "playtime": 30,
+   "deckPlaytime": 0,
+   "lastPlayed": 1707350400,
+   "deck": 1,
+   "hltb": null,
+   "genres": [
+    "Shooter",
+    "MMO"
+   ],
+   "metacritic": 83,
+   "year": 2019,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 632470,
+   "name": "Disco Elysium",
+   "playtime": 45,
+   "deckPlaytime": 0,
+   "lastPlayed": 1733270400,
+   "deck": 3,
+   "hltb": {
+    "main": 22,
+    "extra": 32,
+    "complete": 45
+   },
+   "genres": [
+    "RPG"
+   ],
+   "metacritic": 91,
+   "year": 2019,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 2280,
+   "name": "DOOM",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 7,
+    "extra": 9,
+    "complete": 12
+   },
+   "genres": [
+    "Shooter"
+   ],
+   "metacritic": null,
+   "year": 1993,
+   "controller": "partial",
+   "proton": {
+    "tier": "gold",
+    "total": 120
+   }
+  },
+  {
+   "appid": 379720,
+   "name": "DOOM",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 12,
+    "extra": 17,
+    "complete": 30
+   },
+   "genres": [
+    "Shooter",
+    "Action"
+   ],
+   "metacritic": 85,
+   "year": 2016,
+   "controller": "full",
+   "proton": {
+    "tier": "platinum",
+    "total": 2400
+   }
+  },
+  {
+   "appid": 782330,
+   "name": "DOOM Eternal",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 14,
+    "extra": 20,
+    "complete": 30
+   },
+   "genres": [
+    "Shooter",
+    "Action"
+   ],
+   "metacritic": 88,
+   "year": 2020,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1245620,
+   "name": "ELDEN RING",
+   "playtime": 110,
+   "deckPlaytime": 0,
+   "lastPlayed": 1754870400,
+   "deck": 3,
+   "hltb": {
+    "main": 58,
+    "extra": 100,
+    "complete": 133
+   },
+   "genres": [
+    "Action",
+    "RPG"
+   ],
+   "metacritic": 94,
+   "year": 2022,
+   "controller": null,
+   "proton": {
+    "tier": "gold",
+    "total": 3900
+   }
+  },
+  {
+   "appid": 383870,
+   "name": "Firewatch",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 4,
+    "extra": 5,
+    "complete": 7
+   },
+   "genres": [
+    "Narrative",
+    "Adventure"
+   ],
+   "metacritic": 81,
+   "year": 2016,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 683320,
+   "name": "GRIS",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 3.5,
+    "extra": 4,
+    "complete": 5
+   },
+   "genres": [
+    "Platformer",
+    "Art"
+   ],
+   "metacritic": 84,
+   "year": 2018,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1145360,
+   "name": "Hades",
+   "playtime": 1420,
+   "deckPlaytime": 610,
+   "lastPlayed": 1783382400,
+   "deck": 3,
+   "hltb": {
+    "main": 22,
+    "extra": 48,
+    "complete": 95
+   },
+   "genres": [
+    "Action",
+    "Roguelike"
+   ],
+   "metacritic": 93,
+   "year": 2020,
+   "controller": "full",
+   "proton": {
+    "tier": "native",
+    "total": 120
+   }
+  },
+  {
+   "appid": 546560,
+   "name": "Half-Life: Alyx",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 1,
+   "hltb": {
+    "main": 12,
+    "extra": 15,
+    "complete": 20
+   },
+   "genres": [
+    "VR",
+    "Shooter"
+   ],
+   "metacritic": 93,
+   "year": 2020,
+   "controller": null,
+   "proton": {
+    "tier": "gold",
+    "total": 410
+   }
+  },
+  {
+   "appid": 367520,
+   "name": "Hollow Knight",
+   "playtime": 45,
+   "deckPlaytime": 45,
+   "lastPlayed": 1750550400,
+   "deck": 3,
+   "hltb": {
+    "main": 27,
+    "extra": 42,
+    "complete": 63
+   },
+   "genres": [
+    "Metroidvania"
+   ],
+   "metacritic": 90,
+   "year": 2017,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 219150,
+   "name": "Hotline Miami",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 5,
+    "extra": 6.5,
+    "complete": 15
+   },
+   "genres": [
+    "Action",
+    "Top-down"
+   ],
+   "metacritic": 85,
+   "year": 2012,
+   "controller": null,
+   "proton": {
+    "tier": "silver",
+    "total": 210
+   }
+  },
+  {
+   "appid": 1092790,
+   "name": "Inscryption",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 12,
+    "extra": 15,
+    "complete": 18
+   },
+   "genres": [
+    "Card game",
+    "Horror"
+   ],
+   "metacritic": 85,
+   "year": 2021,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 590380,
+   "name": "Into the Breach",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 9,
+    "extra": 15,
+    "complete": 50
+   },
+   "genres": [
+    "Strategy",
+    "Roguelike"
+   ],
+   "metacritic": 90,
+   "year": 2018,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 243970,
+   "name": "Invisible, Inc.",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 0,
+   "hltb": {
+    "main": 9,
+    "extra": 15,
+    "complete": 40
+   },
+   "genres": [
+    "Strategy",
+    "Stealth"
+   ],
+   "metacritic": 80,
+   "year": 2015,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 460950,
+   "name": "Katana ZERO",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 5,
+    "extra": 6,
+    "complete": 11
+   },
+   "genres": [
+    "Action",
+    "Platformer"
+   ],
+   "metacritic": 83,
+   "year": 2019,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 370910,
+   "name": "Kathy Rain",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 0,
+   "hltb": {
+    "main": 5,
+    "extra": 6,
+    "complete": 6
+   },
+   "genres": [
+    "Point & click",
+    "Mystery"
+   ],
+   "metacritic": null,
+   "year": 2016,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1328670,
+   "name": "Mass Effect Legendary Edition",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 90,
+    "extra": 120,
+    "complete": 150
+   },
+   "genres": [
+    "RPG",
+    "Shooter"
+   ],
+   "metacritic": 86,
+   "year": 2021,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 412020,
+   "name": "Metro Exodus",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 15,
+    "extra": 24,
+    "complete": 40
+   },
+   "genres": [
+    "Shooter",
+    "Survival"
+   ],
+   "metacritic": 82,
+   "year": 2019,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 999990,
+   "name": "Mystery Prototype",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 0,
+   "hltb": null,
+   "genres": [],
+   "metacritic": null,
+   "year": null,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 753640,
+   "name": "Outer Wilds",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 17,
+    "extra": 21,
+    "complete": 24
+   },
+   "genres": [
+    "Adventure",
+    "Exploration"
+   ],
+   "metacritic": 85,
+   "year": 2020,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1205520,
+   "name": "Pentiment",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 16,
+    "extra": 18,
+    "complete": 22
+   },
+   "genres": [
+    "Adventure",
+    "Narrative"
+   ],
+   "metacritic": 86,
+   "year": 2022,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 2231450,
+   "name": "Pizza Tower",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 7,
+    "extra": 10,
+    "complete": 20
+   },
+   "genres": [
+    "Platformer"
+   ],
+   "metacritic": null,
+   "year": 2023,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 400,
+   "name": "Portal",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 3,
+    "extra": 4,
+    "complete": 5.5
+   },
+   "genres": [
+    "Puzzle"
+   ],
+   "metacritic": 90,
+   "year": 2007,
+   "controller": "full",
+   "proton": {
+    "tier": "platinum",
+    "total": 900
+   }
+  },
+  {
+   "appid": 620,
+   "name": "Portal 2",
+   "playtime": 640,
+   "deckPlaytime": 0,
+   "lastPlayed": 1715990400,
+   "deck": 3,
+   "hltb": {
+    "main": 8.5,
+    "extra": 13.5,
+    "complete": 22
+   },
+   "genres": [
+    "Puzzle",
+    "Action"
+   ],
+   "metacritic": 95,
+   "year": 2011,
+   "controller": "full",
+   "proton": {
+    "tier": "platinum",
+    "total": 350
+   }
+  },
+  {
+   "appid": 1174180,
+   "name": "Red Dead Redemption 2",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 50,
+    "extra": 80,
+    "complete": 170
+   },
+   "genres": [
+    "Action",
+    "Open world"
+   ],
+   "metacritic": 93,
+   "year": 2019,
+   "controller": null,
+   "proton": {
+    "tier": "gold",
+    "total": 2400
+   }
+  },
+  {
+   "appid": 653530,
+   "name": "Return of the Obra Dinn",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 8.5,
+    "extra": 10,
+    "complete": 11
+   },
+   "genres": [
+    "Puzzle",
+    "Mystery"
+   ],
+   "metacritic": 89,
+   "year": 2018,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1244090,
+   "name": "Sea of Stars",
+   "playtime": 20,
+   "deckPlaytime": 20,
+   "lastPlayed": 1785974400,
+   "deck": 3,
+   "hltb": {
+    "main": 30,
+    "extra": 35,
+    "complete": 40
+   },
+   "genres": [
+    "RPG",
+    "Turn-based"
+   ],
+   "metacritic": 89,
+   "year": 2023,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1262350,
+   "name": "SIGNALIS",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 7,
+    "extra": 9,
+    "complete": 13
+   },
+   "genres": [
+    "Horror",
+    "Survival"
+   ],
+   "metacritic": null,
+   "year": 2022,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 646570,
+   "name": "Slay the Spire",
+   "playtime": 90,
+   "deckPlaytime": 90,
+   "lastPlayed": 1776470400,
+   "deck": 3,
+   "hltb": {
+    "main": 12,
+    "extra": 40,
+    "complete": 130
+   },
+   "genres": [
+    "Card game",
+    "Roguelike"
+   ],
+   "metacritic": 89,
+   "year": 2019,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 972660,
+   "name": "Spiritfarer",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 30,
+    "extra": 35,
+    "complete": 40
+   },
+   "genres": [
+    "Management",
+    "Cozy"
+   ],
+   "metacritic": 84,
+   "year": 2020,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 413150,
+   "name": "Stardew Valley",
+   "playtime": 5200,
+   "deckPlaytime": 1900,
+   "lastPlayed": 1791158400,
+   "deck": 3,
+   "hltb": {
+    "main": 53,
+    "extra": 95,
+    "complete": 160
+   },
+   "genres": [
+    "Simulation",
+    "RPG"
+   ],
+   "metacritic": 89,
+   "year": 2016,
+   "controller": null,
+   "proton": {
+    "tier": "native",
+    "total": 1200
+   }
+  },
+  {
+   "appid": 264710,
+   "name": "Subnautica",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 30,
+    "extra": 40,
+    "complete": 50
+   },
+   "genres": [
+    "Survival",
+    "Exploration"
+   ],
+   "metacritic": 87,
+   "year": 2018,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 292030,
+   "name": "The Witcher 3: Wild Hunt",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 51,
+    "extra": 103,
+    "complete": 173
+   },
+   "genres": [
+    "RPG",
+    "Open world"
+   ],
+   "metacritic": 93,
+   "year": 2015,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1237970,
+   "name": "Titanfall 2",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 2,
+   "hltb": {
+    "main": 6,
+    "extra": 8,
+    "complete": 13
+   },
+   "genres": [
+    "Shooter"
+   ],
+   "metacritic": 86,
+   "year": 2016,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 553420,
+   "name": "TUNIC",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 12,
+    "extra": 22,
+    "complete": 28
+   },
+   "genres": [
+    "Action",
+    "Adventure"
+   ],
+   "metacritic": 85,
+   "year": 2022,
+   "controller": "full",
+   "proton": null
+  },
+  {
+   "appid": 1135690,
+   "name": "Unpacking",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 3.5,
+    "extra": 4.5,
+    "complete": 5
+   },
+   "genres": [
+    "Puzzle",
+    "Cozy"
+   ],
+   "metacritic": 84,
+   "year": 2021,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 1794680,
+   "name": "Vampire Survivors",
+   "playtime": 900,
+   "deckPlaytime": 700,
+   "lastPlayed": 1792713600,
+   "deck": 3,
+   "hltb": {
+    "main": 15,
+    "extra": 25,
+    "complete": 70
+   },
+   "genres": [
+    "Action",
+    "Roguelike"
+   ],
+   "metacritic": null,
+   "year": 2022,
+   "controller": null,
+   "proton": null
+  },
+  {
+   "appid": 501300,
+   "name": "What Remains of Edith Finch",
+   "playtime": 0,
+   "deckPlaytime": 0,
+   "lastPlayed": 0,
+   "deck": 3,
+   "hltb": {
+    "main": 2,
+    "extra": 2.5,
+    "complete": 3
+   },
+   "genres": [
+    "Narrative"
+   ],
+   "metacritic": 88,
+   "year": 2017,
+   "controller": null,
+   "proton": null
+  }
+ ]
+}
