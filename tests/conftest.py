@@ -5,7 +5,7 @@ contract tests also run against a real backlog_server.py (``real_backlog``):
 
   BACKLOG_CHECKOUT=/path/to/steam-backlog-triage   use that checkout as it is (e.g. PR A's branch)
   BACKLOG_REF=<branch, tag or sha>                 clone github.com/SDNick484/steam-backlog-triage at it
-                                                   (default: the PR A merge commit, API 2)
+                                                   (default: the store-tags merge commit, API 2)
   BACKLOG_REQUIRE_REAL=1                           fail instead of skipping when it can't be had (CI)
 """
 
@@ -31,8 +31,8 @@ from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 BACKLOG_REPO = "https://github.com/SDNick484/steam-backlog-triage.git"
-# steam-backlog-triage's PR A merge commit (API 2). Bump it when the contract changes.
-DEFAULT_BACKLOG_REF = "c2bb1590868ba05460e761b51f5a1370e00a2b46"
+# steam-backlog-triage's store-tags merge commit (PR #11; API 2). Bump it when the contract changes.
+DEFAULT_BACKLOG_REF = "d9a041db3ea55501f3d8477b5c82a09eef5d59a5"
 
 
 # Async tests use anyio's pytest plugin: the MCP SDK's in-process Client needs a fixture's setup
