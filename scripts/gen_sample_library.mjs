@@ -3,7 +3,9 @@
 //
 // The page ships a 45-game sample (SAMPLE and SAMPLE_PROTON). This turns it into an export file
 // (steam_backlog_export.py schema 2) with fixed timestamps, placeholder identity fields, a few
-// extra games for name-resolution tests, and some controller and ProtonDB variety.
+// extra games for name-resolution tests, some controller and ProtonDB variety, and store tags: some games have
+// them (two spellings of Souls-like on purpose), some have [] (unknown), and the rest have no "tags" key at all,
+// like an export made before tags existed.
 //   node scripts/gen_sample_library.mjs path/to/backlog.html [out.json]
 import { readFileSync, writeFileSync } from "node:fs";
 import vm from "node:vm";
@@ -44,6 +46,21 @@ games.push(
   { appid: 999990, name: "Mystery Prototype", playtime: 0, deckPlaytime: 0, lastPlayed: 0, deck: 0, hltb: null,
     genres: [], metacritic: null, year: null, controller: null, proton: null },
 );
+// Steam store tags, top ones in Steam's (vote) order.
+const TAGS = {
+  1245620: ["Souls-like", "Open World", "RPG", "Difficult", "Dark Fantasy"],
+  367520: ["Metroidvania", "Souls-like", "Difficult", "2D", "Atmospheric"],
+  553420: ["Soulslike", "Adventure", "Isometric", "Exploration", "Cute"],
+  588650: ["Roguelite", "Metroidvania", "Action", "Pixel Graphics", "Difficult"],
+  1145360: ["Roguelite", "Action", "Hack and Slash", "Mythology", "Difficult"],
+  646570: ["Deckbuilding", "Roguelike", "Card Game", "Strategy"],
+  1055540: ["Cozy", "Exploration", "Cute", "Relaxing"],
+  1135690: ["Cozy", "Puzzle", "Relaxing", "Cute"],
+  620: ["Puzzle", "Co-op", "First-Person", "Sci-fi", "Comedy"],
+  370910: [],
+  999990: [],
+};
+for (const g of games) if (g.appid in TAGS) g.tags = TAGS[g.appid];
 // The exporter writes games sorted by lower-cased name.
 games.sort((a, b) => (a.name.toLowerCase() < b.name.toLowerCase() ? -1 : a.name.toLowerCase() > b.name.toLowerCase() ? 1 : 0));
 

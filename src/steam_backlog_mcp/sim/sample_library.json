@@ -24,7 +24,13 @@
    "metacritic": null,
    "year": 2019,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": [
+    "Cozy",
+    "Exploration",
+    "Cute",
+    "Relaxing"
+   ]
   },
   {
    "appid": 1086940,
@@ -200,7 +206,14 @@
    "metacritic": 87,
    "year": 2018,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": [
+    "Roguelite",
+    "Metroidvania",
+    "Action",
+    "Pixel Graphics",
+    "Difficult"
+   ]
   },
   {
    "appid": 1190460,
@@ -350,7 +363,14 @@
    "proton": {
     "tier": "gold",
     "total": 3900
-   }
+   },
+   "tags": [
+    "Souls-like",
+    "Open World",
+    "RPG",
+    "Difficult",
+    "Dark Fantasy"
+   ]
   },
   {
    "appid": 383870,
@@ -416,7 +436,14 @@
    "proton": {
     "tier": "native",
     "total": 120
-   }
+   },
+   "tags": [
+    "Roguelite",
+    "Action",
+    "Hack and Slash",
+    "Mythology",
+    "Difficult"
+   ]
   },
   {
    "appid": 546560,
@@ -460,7 +487,14 @@
    "metacritic": 90,
    "year": 2017,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": [
+    "Metroidvania",
+    "Souls-like",
+    "Difficult",
+    "2D",
+    "Atmospheric"
+   ]
   },
   {
    "appid": 219150,
@@ -589,7 +623,8 @@
    "metacritic": null,
    "year": 2016,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": []
   },
   {
    "appid": 1328670,
@@ -645,7 +680,8 @@
    "metacritic": null,
    "year": null,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": []
   },
   {
    "appid": 753640,
@@ -754,7 +790,14 @@
    "proton": {
     "tier": "platinum",
     "total": 350
-   }
+   },
+   "tags": [
+    "Puzzle",
+    "Co-op",
+    "First-Person",
+    "Sci-fi",
+    "Comedy"
+   ]
   },
   {
    "appid": 1174180,
@@ -862,7 +905,13 @@
    "metacritic": 89,
    "year": 2019,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": [
+    "Deckbuilding",
+    "Roguelike",
+    "Card Game",
+    "Strategy"
+   ]
   },
   {
    "appid": 972660,
@@ -990,7 +1039,14 @@
    "metacritic": 85,
    "year": 2022,
    "controller": "full",
-   "proton": null
+   "proton": null,
+   "tags": [
+    "Soulslike",
+    "Adventure",
+    "Isometric",
+    "Exploration",
+    "Cute"
+   ]
   },
   {
    "appid": 1135690,
@@ -1011,7 +1067,13 @@
    "metacritic": 84,
    "year": 2021,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "tags": [
+    "Cozy",
+    "Puzzle",
+    "Relaxing",
+    "Cute"
+   ]
   },
   {
    "appid": 1794680,

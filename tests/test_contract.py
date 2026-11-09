@@ -325,6 +325,21 @@ async def test_client_library_is_cached_by_etag(target: Target) -> None:
 
 
 @pytest.mark.anyio
+async def test_client_library_carries_tags(target: Target) -> None:
+    """The optional "tags" field (§6.7) passes through untouched: a list, [], or no key at all."""
+    raw = {g["appid"]: g for g in target.get("/api/library").json()["games"]}
+    assert raw[367520]["tags"] == ["Metroidvania", "Souls-like", "Difficult", "2D", "Atmospheric"]
+    assert raw[999990]["tags"] == [] and "tags" not in raw[504230]
+    c = BacklogClient(Settings(url=target.url))
+    try:
+        games = {g.appid: g for g in (await c.library()).games}
+        assert games[367520].tags[:2] == ("Metroidvania", "Souls-like") and "soulslike" in games[553420].tag_keys
+        assert games[999990].tags == games[504230].tags == ()
+    finally:
+        await c.aclose()
+
+
+@pytest.mark.anyio
 async def test_client_writes_report_previous(target: Target) -> None:
     c = BacklogClient(Settings(url=target.url))
     try:

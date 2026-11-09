@@ -15,7 +15,7 @@ reasoning behind non-obvious changes instead of only making them.
   Unknown `BACKLOG_*`, `MQTT_*` and `DECK_*` names are kept in `Settings.extra` for phase 2 and doctor
 - `src/steam_backlog_mcp/client.py`: `BacklogClient` (httpx; ETag cache for the library; API 1 vs 2
   detection from `X-Backlog-Api`; conditional PUTs), `BacklogError` (a `ToolError`), `Conflict` (412)
-- `src/steam_backlog_mcp/domain.py`: the dashboard's rules as pure functions: `normalize`, `play_state`,
+- `src/steam_backlog_mcp/domain.py`: the dashboard's rules as pure functions: `normalize`, `tag_key`, `play_state`,
   `length_hours`, `len_bucket`, `score_breakdown`, `Filters`/`passes`, `find` (with relaxation), `picks`,
   `next_queue`, `move`, `overview`, `resolve`. No I/O
 - `src/steam_backlog_mcp/models.py`: Pydantic output models (each tool's outputSchema) and builders

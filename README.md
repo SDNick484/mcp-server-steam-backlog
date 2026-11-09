@@ -40,7 +40,7 @@ MCP client ──stdio, or HTTPS through Cloudflare Access──▶ mcp-server-s
 | Tool | What it does |
 |---|---|
 | `backlog_get_overview` | Start here: library size, never/tried/played, Deck ratings, the backlog by Deck rating × length, lane counts, Up next length, export age, data coverage |
-| `backlog_find_games` | Search and filter with the dashboard's filters (genres, HLTB length, ProtonDB, Metacritic, year, Deck rating, controller, play state, lane, notes); sort and page; relaxes filters instead of answering "not found" |
+| `backlog_find_games` | Search and filter with the dashboard's filters (genres, Steam tags spelled loosely, HLTB length, ProtonDB, Metacritic, year, Deck rating, controller, play state, lane, notes); sort and page; relaxes filters instead of answering "not found" |
 | `backlog_get_game` | Everything about one game, with its score breakdown and store link |
 | `backlog_suggest_picks` | Couch picks with the same filters, each with a score breakdown to explain it |
 | `backlog_get_next_queue` | The Up next lane in order, with notes |
@@ -205,7 +205,7 @@ ruff check . && ruff format --check . && mypy && pytest --cov
 ```
 
 - The contract tests run against a fake, against the fake imitating API 1, and against a real
-  `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default: its PR A merge commit, set in `tests/conftest.py`),
+  `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default: its store-tags merge commit, set in `tests/conftest.py`),
   `BACKLOG_CHECKOUT=<dir>` uses a local checkout. See `docs/handoff-pr-a.md`.
 - `tests/fixtures/score_vectors.json` comes from `node scripts/gen_score_vectors.mjs path/to/backlog.html`.
   CI regenerates it and fails if the page's `score()` changed.

@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import json
+import re
+import shutil
+import subprocess
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -221,8 +225,86 @@ def test_resolve() -> None:
 
 def test_filters_without_every_name() -> None:
     f = domain.Filters(query="x", metacritic_min=1, year_from=2000, protondb=("gold",), controller=("full",),
-                       genres=("RPG",), has_note=True, length="short", deck=(3,), play_state=("never",),
-                       lane=("next",))  # fmt: skip
+                       tags=("soulslike",), genres=("RPG",), has_note=True, length="short", deck=(3,),
+                       play_state=("never",), lane=("next",))  # fmt: skip
     for name in [*f.active(), "query"]:
         assert name not in f.without(name).active()
     assert f.without("query").query == ""
+
+
+# --------------------------------------------------------------------------- store tags
+# The same spellings as steam-backlog-triage's tests/test_stats.py, which checks them against the page's tagKey().
+TAG_KEY_CASES = ["Soulslike", "Souls-like", "souls like", "SOULS-LIKE", "Soulsborne", "soulsbourne", "Metroidvania",
+                 "Roguelike", "Rogue-like", "Roguelite", "2.5D", "Co-op", "co op", "  Pixel   Graphics ", "Sci-fi",
+                 "\uff33\uff4f\uff55\uff4c\uff53\u2010\uff4c\uff49\uff4b\uff45", "Caf\u00e9", "", "+",
+                 "constructor", "__proto__"]  # fmt: skip
+TAG_KEY_WANT = ["soulslike", "soulslike", "soulslike", "soulslike", "soulslike", "soulslike", "metroidvania",
+                "roguelike", "roguelike", "roguelite", "25d", "coop", "coop", "pixelgraphics", "scifi",
+                "soulslike", "caf\u00e9", "", "", "constructor", "proto"]  # fmt: skip
+
+
+def test_tag_key_spellings_share_a_key() -> None:
+    assert [domain.tag_key(x) for x in TAG_KEY_CASES] == TAG_KEY_WANT
+    assert [domain.tag_key(x) for x in (None, 5)] == ["", "5"]
+    assert domain.tag_key("Roguelike") != domain.tag_key("Roguelite")
+    assert domain.tag_key("Action RPG") != domain.tag_key("RPG")
+
+
+@pytest.mark.real
+def test_tag_key_matches_the_page(real_checkout: Path) -> None:
+    """Run the checkout's own tagKey() in node on the same spellings (CI has both)."""
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node isn't installed")
+    page = (real_checkout / "backlog.html").read_text(encoding="utf-8")
+    m = re.search(r"const TAG_ALIASES = .*?\nfunction tagKey\(raw\) \{.*?\n\}", page, re.S)
+    assert m, "backlog.html has no tagKey(): is the checkout older than store tags?"
+    script = m.group(0) + "\nconsole.log(JSON.stringify(JSON.parse(process.argv[1]).map(tagKey)));"
+    out = subprocess.run([node, "-e", script, json.dumps(TAG_KEY_CASES)], capture_output=True, text=True,
+                         check=True, timeout=30).stdout  # fmt: skip
+    assert json.loads(out) == [domain.tag_key(x) for x in TAG_KEY_CASES]
+
+
+def test_normalize_tags_like_the_page() -> None:
+    g = domain.normalize(raw(tags=["Souls-like", " Soulslike ", "", "  ", 5, None, "+", "Metroidvania"]))
+    assert g.tags == ("Souls-like", "Soulslike", "+", "Metroidvania")  # strings, trimmed, blanks dropped
+    assert g.tag_keys == ("soulslike", "metroidvania")  # "+" has no key; duplicates kept once, in order
+    assert domain.normalize(raw(tags=[f"T{i}" for i in range(15)])).tags == tuple(f"T{i}" for i in range(10))
+    for bad in ("Souls-like", {"a": 1}, None):
+        assert domain.normalize(raw(tags=bad)).tags == ()
+    old = domain.normalize(raw())  # an export made before tags: no "tags" key at all
+    assert "tags" not in raw() and (old.tags, old.tag_keys) == ((), ())
+
+
+def test_sample_library_has_tags_empty_and_absent() -> None:
+    data = json.loads(FIXTURE.read_text(encoding="utf-8"))["games"]
+    assert any(g.get("tags") for g in data)
+    assert any(g.get("tags") == [] for g in data)
+    assert any("tags" not in g for g in data)
+
+
+def test_tag_filter_is_any_of_by_key() -> None:
+    assert domain.tag_filter(["souls like", "Soulsborne", "SOULS-LIKE", "+", ""]) == ("soulslike",)
+    souls = names(find(domain.Filters(tags=domain.tag_filter(["soulslike"]))))
+    assert souls == {"ELDEN RING", "Hollow Knight", "TUNIC"}  # "Souls-like" and "Soulslike" are one tag
+    either = names(find(domain.Filters(tags=domain.tag_filter(["Soulsborne", "cozy"]))))
+    assert either == souls | {"A Short Hike", "Unpacking"}
+    assert names(find(domain.Filters(tags=("soulslike",), genres=("Metroidvania",)))) == {"Hollow Knight"}
+
+
+def test_tag_filter_unknown() -> None:
+    gs = games()
+    f = domain.Filters(tags=("cozy",))
+    unknown = {g.name for g in gs if not g.tag_keys}
+    assert {"Mystery Prototype", "Kathy Rain", "Celeste"} <= unknown  # [] and no "tags" key are both unknown
+    assert not unknown & names(find(f))
+    with_unknown = names(find(replace(f, include_unknown=True)))
+    assert unknown <= with_unknown and "ELDEN RING" not in with_unknown  # known tags still have to match
+
+
+def test_tags_relax_before_genres() -> None:
+    f = domain.Filters(tags=("soulslike",), genres=("Puzzle",), controller=("full",))
+    assert f.active() == ["controller", "tags", "genres"]
+    r = find(replace(f, controller=()))
+    assert (r.exact, r.relaxed) == (False, ["tags"])
+    assert "Portal 2" in names(r)

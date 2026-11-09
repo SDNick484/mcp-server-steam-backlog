@@ -6,6 +6,7 @@ writes its rules down, and ``tests/fixtures/score_vectors.json`` pins the score.
 When this file and the page disagree, the page wins and this file is the bug.
 
   normalize()       the page's normalize(): clean one export game
+  tag_key()         the page's tagKey(): the loose key Steam tags are matched by
   play_state()      never / tried / played (TRIED_MIN = 120 minutes)
   length_hours()    the page's mainH(): HLTB main, else extras (JS truthiness)
   len_bucket()      the overview grid's buckets (lenBucket)
@@ -18,6 +19,7 @@ When this file and the page disagree, the page wins and this file is the bug.
 from __future__ import annotations
 
 import math
+import unicodedata
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from typing import Any, Literal
@@ -90,6 +92,8 @@ class Game:
     has_proton: bool  # the export has a "proton" key at all (ProtonDB lookups ran)
     has_details: bool  # store details were fetched (genres or a year)
     export_index: int = 0  # position in the export: the page's stable-sort tie-break
+    tags: tuple[str, ...] = ()  # Steam store tags as Steam spells them, in vote order; () = unknown
+    tag_keys: tuple[str, ...] = ()  # tag_key() of each, blanks dropped, deduplicated
 
 
 def _num(v: Any) -> float | None:
@@ -97,6 +101,33 @@ def _num(v: Any) -> float | None:
     if isinstance(v, bool) or not isinstance(v, int | float):
         return None
     return float(v) if math.isfinite(v) else None
+
+
+# A few names people use for a Steam tag, mapped onto that tag's key (the page's TAG_ALIASES).
+TAG_ALIASES = {"soulsborne": "soulslike", "soulsbourne": "soulslike"}
+
+
+def tag_key(raw: Any) -> str:
+    """The page's tagKey(): NFKC, lower case, letters and digits only, then the alias table.
+
+    "Souls-like", "souls like" and "Soulslike" share the key "soulslike", and so does "Soulsborne".
+    NFKC first, so fullwidth letters and compatibility forms fold onto their plain spelling.
+    """
+    text = unicodedata.normalize("NFKC", "" if raw is None else str(raw)).lower()
+    k = "".join(c for c in text if unicodedata.category(c)[0] in "LN")
+    return TAG_ALIASES.get(k, k)
+
+
+def _names(v: Any) -> tuple[str, ...]:
+    """The page's normalizeExtras() names(): strings only, trimmed, blanks dropped, at most 10."""
+    if not isinstance(v, list):
+        return ()
+    return tuple(x.strip() for x in v if isinstance(x, str) and x.strip())[:10]
+
+
+def _tag_keys(names: Iterable[str]) -> tuple[str, ...]:
+    """tag_key() of each name, blanks dropped ("+" has no key), first occurrence kept."""
+    return tuple(dict.fromkeys(k for k in map(tag_key, names) if k))
 
 
 def normalize(raw: Mapping[str, Any], index: int = 0) -> Game:
@@ -118,6 +149,7 @@ def normalize(raw: Mapping[str, Any], index: int = 0) -> Game:
     year = _num(raw.get("year"))
     appid = raw.get("appid")
     name = raw.get("name")
+    tags = _names(raw.get("tags"))
     return Game(
         appid=int(appid) if isinstance(appid, int | float) and not isinstance(appid, bool) else 0,
         name=str(name) if name else f"App {appid}",
@@ -134,6 +166,8 @@ def normalize(raw: Mapping[str, Any], index: int = 0) -> Game:
         has_proton="proton" in raw,
         has_details=(isinstance(genres_raw, list) and len(genres_raw) > 0) or year is not None,
         export_index=index,
+        tags=tags,
+        tag_keys=_tag_keys(tags),
     )
 
 
@@ -244,6 +278,7 @@ class Filters:
     year_to: float | None = None
     deck: tuple[int, ...] = ()
     controller: tuple[str, ...] = ()
+    tags: tuple[str, ...] = ()  # tag_key() keys, not names: build with tag_filter()
     play_state: tuple[str, ...] = ()
     lane: tuple[str, ...] = ()  # "none" = untriaged
     has_note: bool | None = None
@@ -260,6 +295,8 @@ class Filters:
             names.append("protondb")
         if self.controller:
             names.append("controller")
+        if self.tags:
+            names.append("tags")
         if self.genres:
             names.append("genres")
         if self.has_note is not None:
@@ -280,6 +317,7 @@ class Filters:
             "year": {"year_from": None, "year_to": None},
             "protondb": {"protondb": (), "protondb_min": None},
             "controller": {"controller": ()},
+            "tags": {"tags": ()},
             "genres": {"genres": ()},
             "has_note": {"has_note": None},
             "length": {"length": None, "hours_min": None, "hours_max": None},
@@ -289,6 +327,11 @@ class Filters:
             "query": {"query": ""},
         }
         return replace(self, **cleared[name])
+
+
+def tag_filter(names: Iterable[str]) -> tuple[str, ...]:
+    """Filter input (any spelling) -> the keys Filters.tags holds: "souls like" and "Souls-like" are one."""
+    return _tag_keys(names)
 
 
 def passes(g: Game, f: Filters, triage: Mapping[int, str], notes: Mapping[int, str]) -> bool:
@@ -347,6 +390,13 @@ def passes(g: Game, f: Filters, triage: Mapping[int, str], notes: Mapping[int, s
             if not unk:
                 return False
         elif (g.controller or "none") not in f.controller:
+            return False
+    if f.tags:
+        # Any-of: one shared key is enough. No tags at all means the tags were never fetched (unknown).
+        if not g.tag_keys:
+            if not unk:
+                return False
+        elif not any(k in f.tags for k in g.tag_keys):
             return False
     if f.play_state and play_state(g) not in f.play_state:
         return False

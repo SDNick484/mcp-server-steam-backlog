@@ -626,6 +626,41 @@ own `normalize()` and `score()`) holds 33 export-shaped games with a lane each a
 `score`, `playState` and `lengthHours` (`L`). Both repos test against the same file, byte for
 byte. When `score()` changes, regenerate it and update both repos.
 
+### 6.7 Store tags (not part of the score)
+
+Added by steam-backlog-triage PR #11. Not in `SCORING.md`: tags never change the score. Additive:
+the export's `schema` stays 2 and `X-Backlog-Api` stays 2.
+
+**Library field.** Each export game MAY carry `"tags"`: a list of Steam store (user) tag names, the
+top 10 by vote weight, in Steam's order, spelled as Steam spells them (e.g.
+`["Souls-like", "Difficult", "RPG"]`). `[]` means unknown (not fetched). Exports made before the
+feature have no `"tags"` key; that is also unknown. Neither case means "this game has no tags".
+Clients MUST accept all three shapes. The server
+serves the field as the exporter wrote it.
+
+**Cleaning** (the page's `normalizeExtras()`): keep strings only, trim them, drop blanks, keep at
+most 10. Anything that isn't a list becomes `[]`.
+
+**Tag key** (the page's `tagKey()`), used for every comparison:
+
+1. NFKC-normalize, then lower-case.
+2. Keep only characters whose Unicode general category is a letter (`L*`) or a number (`N*`).
+3. Map through the alias table `{"soulsborne": "soulslike", "soulsbourne": "soulslike"}`.
+
+So `Souls-like`, `Soulslike`, `souls like`, `SOULS-LIKE`, `Soulsborne` and fullwidth
+`Ｓｏｕｌｓ‐ｌｉｋｅ` share the key `soulslike`; `2.5D` is `25d`, `Co-op` is `coop`, and `+` has
+the empty key. A game's tag keys are its tags mapped through the key, blanks dropped, deduplicated
+(first occurrence kept). `Roguelike` and `Roguelite` stay distinct.
+
+**Filter.** Inputs are mapped through the tag key, blanks dropped, deduplicated; the filter holds
+keys. A game passes if **any** of its tag keys is in the filter. A game with no tag keys never
+matches unless "include unknown" is on for the tag filter (the MCP's single `include_unknown`).
+The MCP's `tags` argument takes at most 10 strings of up to 80 characters each.
+
+**Relaxation** (MCP only; the page doesn't relax): `tags` is dropped after `controller` and before
+`genres`. Tags are crowd-voted, finer-grained and noisier than store genres, so they are the weaker
+constraint. The order matches steam-backlog-triage's `backlog_query.py`.
+
 ---
 
 ## 7. Error format and status codes
