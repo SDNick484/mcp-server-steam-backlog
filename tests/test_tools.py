@@ -108,6 +108,29 @@ async def test_find_games_relaxes_instead_of_not_found(fake: FakeBacklog) -> Non
     assert r["fuzzy_query"] and r["games"][0]["name"] == "Celeste"
 
 
+async def test_find_games_by_tags_spelled_loosely(fake: FakeBacklog) -> None:
+    r = await call("backlog_find_games", {"tags": ["souls like"], "sort": "name"})
+    assert r["exact"] and [g["name"] for g in r["games"]] == ["ELDEN RING", "Hollow Knight", "TUNIC"]
+    either = await call("backlog_find_games", {"tags": ["Soulsborne", "COZY"], "limit": 100})
+    assert {g["name"] for g in either["games"]} == {"ELDEN RING", "Hollow Knight", "TUNIC", "A Short Hike", "Unpacking"}
+    unk = await call("backlog_find_games", {"tags": ["cozy"], "include_unknown": True, "limit": 100})
+    assert "Mystery Prototype" in {g["name"] for g in unk["games"]} and unk["matches"] > either["matches"]
+    r = await call("backlog_find_games", {"tags": ["soulslike"], "genres": ["Puzzle"]})
+    assert (r["exact"], r["relaxed"]) == (False, ["tags"])
+
+
+async def test_tags_argument_is_constrained(fake: FakeBacklog) -> None:
+    async with Client(server.mcp) as c:
+        tools = {t.name: t for t in (await c.list_tools()).tools}
+        for name in ("backlog_find_games", "backlog_suggest_picks"):
+            t = tools[name]
+            schema = t.input_schema["properties"]["tags"]["anyOf"][0]
+            assert (schema["maxItems"], schema["items"]["maxLength"]) == (10, 80), name
+            assert "soulslike" in (t.description or "") and "unknown" in (t.description or ""), name
+        assert (await c.call_tool("backlog_find_games", {"tags": ["x"] * 11})).is_error
+        assert (await c.call_tool("backlog_suggest_picks", {"tags": ["x" * 81]})).is_error
+
+
 async def test_pending_is_not_a_minimum(fake: FakeBacklog) -> None:
     assert "protondb_min can't be 'pending'" in await call_error("backlog_find_games", {"protondb_min": "pending"})
 
@@ -128,6 +151,16 @@ async def test_get_game_detail_and_candidates(fake: FakeBacklog) -> None:
     assert doom["reason"] == "ambiguous" and {c["year"] for c in doom["candidates"]} == {1993, 2016}
     unknown = (await call("backlog_get_game", {"game": "Mystery Prototype"}))["game"]
     assert (unknown["controller"], unknown["length_hours"], unknown["protondb"]) == (None, None, None)
+    assert g["tags"] == ["Puzzle", "Co-op", "First-Person", "Sci-fi", "Comedy"]  # Steam's order
+    assert unknown["tags"] == []  # tags: [] in the export
+    celeste = (await call("backlog_get_game", {"game": "Celeste"}))["game"]
+    assert celeste["tags"] == []  # no "tags" key: an export made before tags
+
+
+async def test_suggest_picks_by_tags(fake: FakeBacklog) -> None:
+    r = await call("backlog_suggest_picks", {"count": 5, "tags": ["Soulslike"]})
+    assert r["exact"] and {p["name"] for p in r["picks"]} == {"ELDEN RING", "Hollow Knight", "TUNIC"}
+    assert r["considered"] == 3
 
 
 async def test_suggest_picks_explains_from_the_breakdown(fake: FakeBacklog) -> None:

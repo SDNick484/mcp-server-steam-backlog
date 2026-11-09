@@ -40,7 +40,7 @@ MCP client ──stdio, or HTTPS through Cloudflare Access──▶ mcp-server-s
 | Tool | What it does |
 |---|---|
 | `backlog_get_overview` | Start here: library size, never/tried/played, Deck ratings, the backlog by Deck rating × length, lane counts, Up next length, export age, data coverage |
-| `backlog_find_games` | Search and filter with the dashboard's filters (genres, HLTB length, ProtonDB, Metacritic, year, Deck rating, controller, play state, lane, notes); sort and page; relaxes filters instead of answering "not found" |
+| `backlog_find_games` | Search and filter with the dashboard's filters (genres, Steam tags spelled loosely, HLTB length, ProtonDB, Metacritic, year, Deck rating, controller, play state, lane, notes); sort and page; relaxes filters instead of answering "not found" |
 | `backlog_get_game` | Everything about one game, with its score breakdown and store link |
 | `backlog_suggest_picks` | Couch picks with the same filters, each with a score breakdown to explain it |
 | `backlog_get_next_queue` | The Up next lane in order, with notes |

@@ -45,6 +45,7 @@ class GameDetail(GameRow):
     hltb: dict[str, float | None] | None
     protondb_reports: int | None
     genres: list[str]
+    tags: list[str] = Field(description="Steam user tags, most voted first; [] = unknown (not fetched)")
     year: int | None
     controller: Literal["full", "partial", "none"] | None = Field(description="null = unknown")
     note: str | None
@@ -252,6 +253,7 @@ def game_detail(g: domain.Game, lane: str, note: str | None, next_position: int 
             "hltb": {"main": g.hltb.main, "extra": g.hltb.extra, "complete": g.hltb.complete} if g.hltb else None,
             "protondb_reports": int(g.proton.total) if g.proton else None,
             "genres": list(g.genres),
+            "tags": list(g.tags),
             "year": _int(g.year),
             "controller": controller,
             "note": note,
