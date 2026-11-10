@@ -4,6 +4,7 @@ steam-backlog-triage is the source of truth for the dashboard's rules, written a
 backlog_query.py. This repo carries a verbatim copy of that one file (so the server stays a single
 package with no runtime dependency on the sibling) and query.lock pins where the copy came from:
 
+    python scripts/sync_query.py                       write the copy as of the locked commit (lock untouched)
     python scripts/sync_query.py --update              move the lock to steam-backlog-triage main, then write the copy
     python scripts/sync_query.py --update --ref REF    ... to this branch, tag or commit instead of main
     python scripts/sync_query.py --check               exit 1 if the copy was edited, or isn't the locked commit's
@@ -214,7 +215,7 @@ def dest_path(root: Path, lock: Lock) -> Path:
 # --- commands ----------------------------------------------------------------------------
 def check(root: Path, lock: Lock, args: argparse.Namespace) -> int:
     dest = dest_path(root, lock)
-    fix = f"python scripts/sync_query.py --update  (or `git checkout -- {lock.dest}`)"
+    fix = f"python scripts/sync_query.py --force (restores the locked file; or `git checkout -- {lock.dest}`)"
     try:
         local = sha256_of(dest.read_bytes())
     except FileNotFoundError:
@@ -269,6 +270,42 @@ def check(root: Path, lock: Lock, args: argparse.Namespace) -> int:
     return 0
 
 
+def guard_local_edit(dest: Path, lock: Lock, data: bytes, force: bool) -> bytes | None:
+    """The copy's current bytes (None if absent); refuses if it was edited here and `data` would replace it."""
+    current = dest.read_bytes() if dest.exists() else None
+    if current is not None and sha256_of(current) != lock.sha256 and current != data and not force:
+        raise SyncError(
+            f"refusing to overwrite {lock.dest}: it differs from {LOCK}, so it was edited here. Change the file in "
+            f"{lock.repo} instead (or `git checkout -- {lock.dest}`); `--force` overwrites."
+        )
+    return current
+
+
+def restore(root: Path, lock: Lock, args: argparse.Namespace) -> int:
+    """Write the copy as of the locked commit; the lock is never touched."""
+    if args.source:
+        data = read_source(args.source, lock.path)
+        origin = str(args.source)
+    else:
+        data = fetch(lock.repo, lock.commit, lock.path)
+        origin = f"{lock.repo} at {lock.commit[:7]}"
+    if sha256_of(data) != lock.sha256:
+        print(
+            f"sync_query.py: {lock.path} from {origin} doesn't hash to {LOCK}'s sha256, so nothing was written. "
+            "To take that file instead, run with --update.",
+            file=sys.stderr,
+        )
+        return 1
+    dest = dest_path(root, lock)
+    current = guard_local_edit(dest, lock, data, args.force)
+    changed = current != data
+    if changed:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        write_atomic(dest, data)
+    print(f"{lock.dest} {'written' if changed else 'unchanged'} as of {origin} ({LOCK} untouched)")
+    return 0
+
+
 def update(root: Path, lock: Lock, args: argparse.Namespace) -> int:
     if args.source:
         commit = source_head(args.source)
@@ -281,12 +318,7 @@ def update(root: Path, lock: Lock, args: argparse.Namespace) -> int:
     dest = dest_path(root, lock)
     new_lock = Lock(lock.repo, commit, lock.path, lock.dest, sha256_of(data))
 
-    current = dest.read_bytes() if dest.exists() else None
-    if current is not None and sha256_of(current) != lock.sha256 and current != data and not args.force:
-        raise SyncError(
-            f"refusing to overwrite {lock.dest}: it differs from {LOCK}, so it was edited here. Change the file in "
-            f"{lock.repo} instead (or `git checkout -- {lock.dest}`); `--force` overwrites."
-        )
+    current = guard_local_edit(dest, lock, data, args.force)
 
     changed = current != data
     if changed:
@@ -312,7 +344,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--check", action="store_true", help="don't write; exit 1 if the copy differs")
     parser.add_argument("--offline", action="store_true", help="with --check: only compare the copy with the lock")
     parser.add_argument("--latest", action="store_true", help="with --check: compare against main, not the lock")
-    parser.add_argument("--force", action="store_true", help="with --update: overwrite a copy that was edited locally")
+    parser.add_argument("--force", action="store_true", help="when writing: overwrite a copy that was edited locally")
     parser.add_argument("--source", type=Path, help="read the file from this local steam-backlog-triage checkout")
     parser.add_argument(
         "--root",
@@ -321,11 +353,13 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         help="the repo to sync (default: the one this script is in)",
     )
     args = parser.parse_args(argv)
-    if args.update == args.check:
-        parser.error("give exactly one of --update and --check")
-    if args.check and (args.force or args.ref != "main"):
-        parser.error("--force and --ref go with --update; --check never writes")
-    if args.update and (args.offline or args.latest):
+    if args.update and args.check:
+        parser.error("--update writes; --check never does")
+    if args.check and args.force:
+        parser.error("--force goes with writing; --check never writes")
+    if not args.update and args.ref != "main":
+        parser.error("--ref goes with --update")
+    if not args.check and (args.offline or args.latest):
         parser.error("--offline and --latest go with --check")
     if args.offline and args.latest:
         parser.error("--latest needs the network; --offline can't")
@@ -338,7 +372,9 @@ def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
         lock = read_lock(args.root)
-        return update(args.root, lock, args) if args.update else check(args.root, lock, args)
+        if args.update:
+            return update(args.root, lock, args)
+        return check(args.root, lock, args) if args.check else restore(args.root, lock, args)
     except SyncError as exc:
         print(f"sync_query.py: {exc}", file=sys.stderr)
         return 2

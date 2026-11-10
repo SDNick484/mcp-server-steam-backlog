@@ -92,3 +92,30 @@ def test_update_refuses_to_overwrite_a_local_edit(copy_root: Path, triage: Path)
     assert b"# local edit" in (copy_root / DEST).read_bytes()
     assert run("--root", copy_root, "--source", triage, "--update", "--force").returncode == 0
     assert b"# local edit" not in (copy_root / DEST).read_bytes()
+
+
+def test_restore_writes_the_locked_bytes_and_leaves_the_lock(copy_root: Path, tmp_path: Path) -> None:
+    locked = (copy_root / DEST).read_bytes()
+    lock_before = (copy_root / LOCK).read_bytes()
+    source = tmp_path / "locked-source"
+    source.mkdir()
+    (source / "backlog_query.py").write_bytes(locked)
+    (copy_root / DEST).write_bytes(b"corrupted\n")
+    assert run("--root", copy_root, "--source", source).returncode == 2  # an edited copy needs --force
+    assert (copy_root / DEST).read_bytes() == b"corrupted\n"
+    assert run("--root", copy_root, "--source", source, "--force").returncode == 0
+    assert (copy_root / DEST).read_bytes() == locked
+    assert (copy_root / LOCK).read_bytes() == lock_before
+    (copy_root / DEST).unlink()  # a missing copy needs no --force
+    assert run("--root", copy_root, "--source", source).returncode == 0
+    assert (copy_root / DEST).read_bytes() == locked
+
+
+def test_restore_refuses_a_source_that_is_not_the_locked_file(copy_root: Path, triage: Path) -> None:
+    (copy_root / DEST).unlink()
+    lock_before = (copy_root / LOCK).read_bytes()
+    result = run("--root", copy_root, "--source", triage, "--force")
+    assert result.returncode == 1
+    assert "nothing was written" in result.stderr
+    assert not (copy_root / DEST).exists()
+    assert (copy_root / LOCK).read_bytes() == lock_before
