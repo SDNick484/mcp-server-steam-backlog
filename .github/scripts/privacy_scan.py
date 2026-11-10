@@ -6,8 +6,9 @@ Checks, over every tracked file (and untracked ones that are not ignored, so it 
   ip         an IPv4 address that is not loopback, RFC 5737 documentation (192.0.2.0/24, 198.51.100.0/24,
              203.0.113.0/24) or RFC 1918 private (10/8, 172.16/12, 192.168/16). Files under tests/fixtures/ are
              exempt, since fixtures may hold anything shaped like data.
-  email      an address that is not @users.noreply.github.com, noreply@github.com, noreply@anthropic.com,
-             git@github.com, or at example.com / .org / .net / .test / .invalid
+  email      an address that is not @users.noreply.github.com, noreply@github.com, support@github.com (the
+             Signed-off-by in Dependabot's commits), noreply@anthropic.com, git@github.com, or at
+             example.com / .org / .net / .test / .invalid
   denylist   any line of the PRIVACY_DENYLIST environment variable (case-insensitive substring), for the
              things no pattern can know: your hostnames, domain, name, time zone, device names.
 
@@ -38,7 +39,7 @@ STEAMID = re.compile(r"(?<![0-9A-Za-z])7656119[0-9]{10}(?![0-9A-Za-z])")
 IPV4 = re.compile(r"(?<![0-9A-Za-z.])((?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})(?:\.(?:25[0-5]|2[0-4][0-9]|1?[0-9]{1,2})){3})(?![0-9A-Za-z]|\.[0-9])")
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,})")
 ALLOWED_EMAIL = re.compile(
-    r"^(?:[^@]+@users\.noreply\.github\.com|noreply@github\.com|noreply@anthropic\.com|git@github\.com|"
+    r"^(?:[^@]+@users\.noreply\.github\.com|(?:noreply|support)@github\.com|noreply@anthropic\.com|git@github\.com|"
     r"[^@]+@(?:[a-z0-9-]+\.)*example\.(?:com|org|net)|[^@]+@[a-z0-9.-]*\.(?:test|invalid|example))$", re.I)
 DOC_NETS = [ipaddress.ip_network(n) for n in ("192.0.2.0/24", "198.51.100.0/24", "203.0.113.0/24")]
 PRIVATE_NETS = [ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")]
