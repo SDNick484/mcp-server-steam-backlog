@@ -1,0 +1,8 @@
+# Where this repo's copy of steam-backlog-triage's backlog_query.py comes from: the repo, the commit,
+# the file's path there, where the copy lives here, and the SHA-256 of its bytes. Written by
+# `python scripts/sync_query.py --update`; see that script. Don't edit by hand.
+repo = "SDNick484/steam-backlog-triage"
+commit = "4d0b53c3c11d88e6afb5b513572d32d78ca9f24c"
+path = "backlog_query.py"
+dest = "src/steam_backlog_mcp/backlog_query.py"
+sha256 = "a3c4e7206a7ecc0adcd724d0d5c63bd6762348100e06492daece295155615b2d"
