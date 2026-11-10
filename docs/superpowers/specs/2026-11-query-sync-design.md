@@ -1,6 +1,6 @@
 # Query sync: the MCP takes backlog_query.py from steam-backlog-triage
 
-Status: draft for review, 2026-11-10. Branch `feature/query-sync`.
+Status: approved 2026-11-10 (review answers in §13). Branch `feature/query-sync`.
 Based on this repo at `b8e29c7` and steam-backlog-triage at `4d0b53c` (`backlog_query.py` last changed in `00b0586`).
 
 ## 1. Goal
@@ -115,7 +115,9 @@ parity rather than re-running triage's node tests. The existing score-vector job
   `length_none`, `include_unknown` to every `*_unknown` flag, publisher and developer names to `name_key` keys);
 - `tag_filter()`, new `name_filter()`, `move()`;
 - `passes`, `find` (today's relaxation loop and fuzzy step, over `backlog_query.selected`), `picks` (a call to
-  `backlog_query.picks`), and a typed `resolve` wrapper.
+  `backlog_query.picks`); typed copies of `LANES`, `DECK_NAME` and `TIERS` where a `Literal` is needed, each
+  pinned equal to `backlog_query`'s by a test; and an explicit `__all__` (strict mypy has no implicit re-export).
+  `models.candidates` narrows `Resolved.reason` to its `Literal` with a cast.
 
 Everything else is re-exported from `backlog_query`: `Game`, `Hltb`, `Proton`, `Term`, `normalize`, `tag_key`,
 `TAG_ALIASES`, `play_state`, `length_hours`, `len_bucket`, `lane_of`, `is_closed`, `in_backlog`, `score_breakdown`,
@@ -219,6 +221,8 @@ what the privacy test proves, doesn't change. (The alternative is a `privacy-sca
 
 - `backlog_find_games` and `backlog_suggest_picks` accept `publishers`, `developers`, `reviews`, `metacritic_max`.
 - `backlog_get_stats` exists.
+- `backlog_get_game`'s `game` gains `publishers`, `developers` (lists; `[]` = unknown) and `reviews`
+  (`desc`, `pct`, `total`; null = unknown).
 - `backlog_get_overview`'s `coverage` gains `publishers`, `developers` and `reviews` (additive; the model is an open
   `dict[str, float]`).
 - Nothing else in any existing tool's output changes.
@@ -250,16 +254,14 @@ Then G6, after merge: the one-line `MCP_PINNED_REF` PR in steam-backlog-triage.
 
 ## 12. Not in this PR
 
-- `backlog_get_game` showing publishers, developers and reviews (see question 2).
 - `unknown_only`, the page's views beyond `backlog_only`, and the Ask-only builders.
 - Stamping the commit on installs that don't go through `git archive`.
 - Running triage's node parity tests here.
 
-## 13. Questions for review
+## 13. Review decisions (2026-11-10)
 
-1. **Test edits.** Read G2 as "no edits to existing assertions": adding `backlog_get_stats` to `ALL_TOOLS` and new
-   entries to the privacy test's `CALLS` are required by G4 and the privacy requirement. OK?
-2. **`backlog_get_game` output.** Strictly, G2 keeps every output model as it is, so a user can filter by
-   publisher but can't see a game's publisher. Adding `publishers`, `developers` and `reviews` to `GameDetail` is
-   three additive fields. I'd add them; say no and they stay out.
-3. **Privacy-scan findings.** Build the test's SteamID-shaped constant at run time (recommended), or allow-markers?
+1. **Test edits: yes.** Adding `backlog_get_stats` to `ALL_TOOLS` and new entries to the privacy test's `CALLS`
+   are the only edits to existing tests beyond imports; no existing assertion changes.
+2. **`backlog_get_game` output: add `publishers`, `developers` and `reviews`** to `GameDetail` (§9), so a game's
+   publisher is visible to a user who filters by it. Additive; no existing field changes.
+3. **Privacy-scan findings: build the constant at run time** (§8.3).
