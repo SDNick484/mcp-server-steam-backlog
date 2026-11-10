@@ -3,6 +3,7 @@ the wire-level fake. These are the rules from the design doc's sections 4 to 7."
 
 from __future__ import annotations
 
+import json
 import re
 import time
 from typing import Any
@@ -11,7 +12,7 @@ import pytest
 from mcp import Client
 
 from steam_backlog_mcp import server
-from steam_backlog_mcp.sim.fake_backlog import FakeBacklog
+from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 
 pytestmark = pytest.mark.anyio
 
@@ -452,3 +453,52 @@ async def test_prompts(fake: FakeBacklog) -> None:
         p = await c.get_prompt("pick_for_tonight", {"minutes": "180", "device": "pc"})
         text = p.messages[0].content.text  # type: ignore[union-attr]
         assert "don't filter by length" in text and "PC" in text
+
+
+# --------------------------------------------------------------------------- publisher, developer, review filters
+def old_export_library() -> dict[str, Any]:
+    """The sample library as an old export wrote it: no publishers, developers or reviews on any game."""
+    lib: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    for g in lib["games"]:
+        for key in ("publishers", "developers", "reviews"):
+            g.pop(key, None)
+    return lib
+
+
+async def test_overview_coverage_includes_the_new_data_sources(fake: FakeBacklog) -> None:
+    o = await call("backlog_get_overview")
+    assert {"publishers", "developers", "reviews"} <= set(o["coverage"])
+
+
+async def test_find_games_by_publisher(fake: FakeBacklog) -> None:
+    r = await call("backlog_find_games", {"publishers": ["Devolver Digital"]})
+    assert r["exact"] and r["matches"] == 4
+
+
+async def test_picks_by_developer_and_review_level(fake: FakeBacklog) -> None:
+    # Portal 2 is played (640 min), so Half-Life: Alyx is the only Valve backlog game.
+    r = await call("backlog_suggest_picks", {"developers": ["Valve"], "reviews": ["overwhelmingly-positive"]})
+    assert r["exact"] is True
+    assert r["picks"] and {p["name"] for p in r["picks"]} <= {"Portal 2", "Half-Life: Alyx"}
+
+
+@pytest.mark.parametrize("args", [{"publishers": ["x"] * 11}, {"reviews": ["great"]}, {"metacritic_max": 101}])
+async def test_new_filter_arguments_are_bounded(fake: FakeBacklog, args: dict[str, Any]) -> None:
+    await call_error("backlog_find_games", args)
+
+
+async def test_get_game_reports_publishers_developers_and_reviews(fake: FakeBacklog) -> None:
+    g = (await call("backlog_get_game", {"game": "Hotline Miami"}))["game"]
+    assert g["publishers"] == ["DEVOLVER DIGITAL"] and g["developers"] == ["Dennaton Games"]
+    assert g["reviews"] == {"desc": "Overwhelmingly Positive", "pct": 96, "total": 80000}
+    p = (await call("backlog_get_game", {"game": "Portal"}))["game"]
+    assert p["publishers"] == [] and p["developers"] == [] and p["reviews"] is None
+
+
+async def test_old_export_without_the_new_data_relaxes_the_publisher_filter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with FakeBacklog(old_export_library()) as f:
+        monkeypatch.setenv("BACKLOG_URL", f.url)
+        r = await call("backlog_find_games", {"publishers": ["Valve"]})
+    assert r["exact"] is False and "publishers" in r["relaxed"]

@@ -151,11 +151,15 @@ def _filters(
     protondb: list[domain.Tier] | None,
     protondb_min: domain.Tier | None,
     metacritic_min: int | None,
+    metacritic_max: int | None,
     year_from: int | None,
     year_to: int | None,
     deck: list[domain.DeckName] | None,
     controller: list[domain.Controller] | None,
     tags: list[str] | None,
+    publishers: list[str] | None,
+    developers: list[str] | None,
+    reviews: list[domain.ReviewLevel] | None,
     play_state: list[domain.PlayState] | None,
     lane: list[domain.LaneOrNone] | None,
     has_note: bool | None,
@@ -174,11 +178,15 @@ def _filters(
         protondb=tuple(protondb or ()),
         protondb_min=protondb_min,
         metacritic_min=metacritic_min,
+        metacritic_max=metacritic_max,
         year_from=year_from,
         year_to=year_to,
         deck=tuple(domain.DECK_BY_NAME[d] for d in deck or ()),
         controller=tuple(controller or ()),
         tags=domain.tag_filter(tags or ()),
+        publishers=domain.name_filter(publishers or ()),
+        developers=domain.name_filter(developers or ()),
+        reviews=tuple(reviews or ()),
         play_state=tuple(play_state or ()),
         lane=tuple(lane or ()),
         has_note=has_note,
@@ -235,6 +243,19 @@ Tags = Annotated[
         description="Steam user tags, any of them, spelled loosely: 'soulslike' finds Souls-like, e.g. ['Roguelite']",
     ),
 ]
+Names = Annotated[list[Annotated[str, Field(max_length=80)]] | None, Field(default=None, max_length=10)]
+Publishers = Annotated[
+    Names,
+    Field(description="Publishers, any of them, spelled loosely: 'Devolver Digital Inc.' finds 'DEVOLVER DIGITAL'"),
+]
+Developers = Annotated[
+    Names,
+    Field(description="Developers, any of them, spelled loosely: 'valve' finds 'Valve'"),
+]
+Reviews = Annotated[
+    list[domain.ReviewLevel] | None,
+    Field(default=None, description="Steam review levels to include; 'few' = too few reviews for a level"),
+]
 GenreMatch = Annotated[Literal["any", "all"], Field(description="any: one of the genres; all: every one")]
 Length = Annotated[
     domain.LenBucket | None,
@@ -250,6 +271,7 @@ TierMin = Annotated[
     Field(default=None, description="Minimum ProtonDB tier: native > platinum > gold > silver > bronze > borked"),
 ]
 McMin = Annotated[int | None, Field(default=None, ge=0, le=100)]
+McMax = Annotated[int | None, Field(default=None, ge=0, le=100)]
 Year = Annotated[int | None, Field(default=None, ge=1950, le=2100)]
 Decks = Annotated[list[domain.DeckName] | None, Field(default=None, description="Steam Deck ratings to include")]
 Controllers = Annotated[list[domain.Controller] | None, Field(default=None, description="Controller support")]
@@ -324,11 +346,15 @@ def register_read_tools(server: MCPServer) -> None:
         protondb: Tiers = None,
         protondb_min: TierMin = None,
         metacritic_min: McMin = None,
+        metacritic_max: McMax = None,
         year_from: Year = None,
         year_to: Year = None,
         deck: Decks = None,
         controller: Controllers = None,
         tags: Tags = None,
+        publishers: Publishers = None,
+        developers: Developers = None,
+        reviews: Reviews = None,
         play_state: PlayStates = None,
         lane: Lanes = None,
         has_note: HasNote = None,
@@ -344,15 +370,19 @@ def register_read_tools(server: MCPServer) -> None:
         """
         <use_case>
         Search and filter the whole Steam library with the dashboard's filters: name or genre words, genres,
-        Steam user tags, HowLongToBeat length, ProtonDB tier, Metacritic, release year, Steam Deck rating,
-        controller support, play state, triage lane (list/bucket/shelf) and notes. Use it to find a game's app
-        id before changing it, or to answer questions like "which Verified RPGs have I never played?".
+        Steam user tags, publishers, developers, Steam review levels, HowLongToBeat length, ProtonDB tier,
+        Metacritic, release year, Steam Deck rating, controller support, play state, triage lane
+        (list/bucket/shelf) and notes. Use it to find a game's app id before changing it,
+        or to answer questions like "which Verified RPGs have I never played?".
         </use_case>
         <important_notes>
         - Filters combine with AND. Games with no data for a filter are excluded unless include_unknown.
         - tags are Steam user tags (e.g. Souls-like, Metroidvania, Cozy), matched loosely: case, spaces and
           punctuation are ignored, so "soulslike" or "souls like" finds Souls-like (and so does "soulsborne").
           A game passes if it has any of them. A game with no tag data has unknown tags, not "no tags".
+        - publishers and developers match any spelling of a name ("Devolver Digital Inc." finds "DEVOLVER DIGITAL");
+          reviews are Steam's review levels (few = too few reviews for a level); a game with no data for one of
+          them is unknown.
         - length uses the dashboard's presets on one HLTB measure; hours_min/hours_max set an exact range.
         - When nothing matches, it returns the closest games instead (exact=false) and says which filters it
           dropped (relaxed) or that it matched the name loosely (fuzzy_query). Tell the user that.
@@ -362,7 +392,8 @@ def register_read_tools(server: MCPServer) -> None:
         """
         f = _filters(
             query, genres, genre_match, length, length_measure, hours_min, hours_max, protondb, protondb_min,
-            metacritic_min, year_from, year_to, deck, controller, tags, play_state, lane, has_note, include_unknown,
+            metacritic_min, metacritic_max, year_from, year_to, deck, controller, tags, publishers, developers,
+            reviews, play_state, lane, has_note, include_unknown,
         )  # fmt: skip
         v = await view()
         res = domain.find(v.lib.games, f, v.triage, v.notes, sort=sort, backlog_only=backlog_only)
@@ -416,11 +447,15 @@ def register_read_tools(server: MCPServer) -> None:
         protondb: Tiers = None,
         protondb_min: TierMin = None,
         metacritic_min: McMin = None,
+        metacritic_max: McMax = None,
         year_from: Year = None,
         year_to: Year = None,
         deck: Decks = None,
         controller: Controllers = None,
         tags: Tags = None,
+        publishers: Publishers = None,
+        developers: Developers = None,
+        reviews: Reviews = None,
         play_state: PlayStates = None,
         has_note: HasNote = None,
         include_unknown: Unknown = False,
@@ -432,7 +467,8 @@ def register_read_tools(server: MCPServer) -> None:
         8 h +18, MC 86 +5.5) so you can explain why it was picked.
         </use_case>
         <important_notes>
-        - Only backlog games (unplayed and not in skip or done), with the same filters as backlog_find_games.
+        - Only backlog games (unplayed and not in skip or done). It takes the same filters as backlog_find_games,
+          including publishers, developers and Steam review levels.
         - tags are Steam user tags, spelled loosely ("soulslike" finds Souls-like); a game passes with any of them.
           A game with no tag data has unknown tags, not "no tags": include_unknown keeps it.
         - Ranked by score alone, exactly like the dashboard's Couch picks. Up next games get +100, which usually
@@ -444,7 +480,8 @@ def register_read_tools(server: MCPServer) -> None:
         """
         f = _filters(
             query, genres, genre_match, length, length_measure, hours_min, hours_max, protondb, protondb_min,
-            metacritic_min, year_from, year_to, deck, controller, tags, play_state, None, has_note, include_unknown,
+            metacritic_min, metacritic_max, year_from, year_to, deck, controller, tags, publishers, developers,
+            reviews, play_state, None, has_note, include_unknown,
         )  # fmt: skip
         v = await view()
         pool = domain.picks(v.lib.games, f, v.triage, v.notes, exclude_next=exclude_next)

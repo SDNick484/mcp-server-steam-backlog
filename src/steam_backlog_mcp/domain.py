@@ -12,7 +12,7 @@ the MCP needs on top:
   passes(), picks()        backlog_query's, over the converted filters
   find()                   the list, with the MCP's relaxation names ("metacritic_min") and fuzzy-name
                            step (duplicate names keep the requested sort)
-  tag_filter(), move()
+  tag_filter(), name_filter(), move()
 
 Everything else (normalize, score, sort_games, next_queue, overview, resolve, ...) is backlog_query's own,
 re-exported here.
@@ -85,6 +85,7 @@ __all__ = [
     "PlayState",
     "Proton",
     "Resolved",
+    "ReviewLevel",
     "Sort",
     "Term",
     "Tier",
@@ -96,6 +97,7 @@ __all__ = [
     "len_bucket",
     "length_hours",
     "move",
+    "name_filter",
     "name_key",
     "next_queue",
     "normalize",
@@ -119,6 +121,18 @@ Measure = Literal["main", "extra", "complete"]
 DeckName = Literal["verified", "playable", "unsupported", "unknown"]
 Controller = Literal["full", "partial", "none"]
 Tier = Literal["native", "platinum", "gold", "silver", "bronze", "borked", "pending"]
+ReviewLevel = Literal[
+    "overwhelmingly-positive",
+    "very-positive",
+    "positive",
+    "mostly-positive",
+    "mixed",
+    "mostly-negative",
+    "negative",
+    "very-negative",
+    "overwhelmingly-negative",
+    "few",
+]
 Sort = Literal["score", "short", "name", "recent", "most", "mc"]
 
 # Typed copies of backlog_query's constants, for the places that need the Literal.
@@ -145,11 +159,15 @@ class Filters:
     protondb: tuple[str, ...] = ()
     protondb_min: str | None = None
     metacritic_min: float | None = None
+    metacritic_max: float | None = None
+    reviews: tuple[str, ...] = ()  # ReviewLevel keys
     year_from: float | None = None
     year_to: float | None = None
     deck: tuple[int, ...] = ()
     controller: tuple[str, ...] = ()
     tags: tuple[str, ...] = ()  # tag_key() keys, not names: build with tag_filter()
+    publishers: tuple[str, ...] = ()  # name_key() keys, not names: build with name_filter()
+    developers: tuple[str, ...] = ()  # likewise
     play_state: tuple[str, ...] = ()
     lane: tuple[str, ...] = ()  # "none" = untriaged
     has_note: bool | None = None
@@ -160,12 +178,20 @@ class Filters:
         names: list[str] = []
         if self.metacritic_min is not None:
             names.append("metacritic_min")
+        if self.metacritic_max is not None:
+            names.append("metacritic_max")
+        if self.reviews:
+            names.append("reviews")
         if self.year_from is not None or self.year_to is not None:
             names.append("year")
         if self.protondb or self.protondb_min:
             names.append("protondb")
         if self.controller:
             names.append("controller")
+        if self.publishers:
+            names.append("publishers")
+        if self.developers:
+            names.append("developers")
         if self.tags:
             names.append("tags")
         if self.genres:
@@ -185,6 +211,10 @@ class Filters:
     def without(self, name: str) -> Filters:
         cleared: dict[str, dict[str, Any]] = {
             "metacritic_min": {"metacritic_min": None},
+            "metacritic_max": {"metacritic_max": None},
+            "reviews": {"reviews": ()},
+            "publishers": {"publishers": ()},
+            "developers": {"developers": ()},
             "year": {"year_from": None, "year_to": None},
             "protondb": {"protondb": (), "protondb_min": None},
             "controller": {"controller": ()},
@@ -221,16 +251,20 @@ class Filters:
             protondb_unknown=unk,
             protondb_min=self.protondb_min,
             metacritic_min=self.metacritic_min,
+            metacritic_max=self.metacritic_max,
             metacritic_unknown=unk,
             year_from=self.year_from,
             year_to=self.year_to,
             year_unknown=unk,
             controller=self.controller,
             controller_unknown=unk,
+            publishers=self.publishers,
             publishers_unknown=unk,
+            developers=self.developers,
             developers_unknown=unk,
             tags=self.tags,
             tags_unknown=unk,
+            reviews=self.reviews,
             reviews_unknown=unk,
             play_state=self.play_state,
             lane=self.lane,
@@ -241,6 +275,12 @@ class Filters:
 def tag_filter(names: Iterable[str]) -> tuple[str, ...]:
     """Filter input (any spelling) -> the keys Filters.tags holds: "souls like" and "Souls-like" are one."""
     return tuple(dict.fromkeys(k for k in map(tag_key, names) if k))
+
+
+def name_filter(names: Iterable[str]) -> tuple[str, ...]:
+    """Filter input (any spelling) -> the keys Filters.publishers/developers hold: "Devolver Digital Inc." and
+    "DEVOLVER DIGITAL" are one. A name that normalizes to nothing is dropped."""
+    return tuple(dict.fromkeys(k for k in map(name_key, names) if k))
 
 
 def passes(g: Game, f: Filters, triage: Mapping[int, str], notes: Mapping[int, str]) -> bool:

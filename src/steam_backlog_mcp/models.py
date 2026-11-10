@@ -39,6 +39,12 @@ class GameRow(BaseModel):
     score: float
 
 
+class ReviewSummary(BaseModel):
+    desc: str | None
+    pct: float | None
+    total: int
+
+
 class GameDetail(GameRow):
     deck_playtime_hours: float
     last_played: str | None = Field(description="UTC date, or null if never")
@@ -46,6 +52,9 @@ class GameDetail(GameRow):
     protondb_reports: int | None
     genres: list[str]
     tags: list[str] = Field(description="Steam user tags, most voted first; [] = unknown (not fetched)")
+    publishers: list[str] = Field(description="[] = unknown")
+    developers: list[str] = Field(description="[] = unknown")
+    reviews: ReviewSummary | None = Field(description="null = unknown")
     year: int | None
     controller: Literal["full", "partial", "none"] | None = Field(description="null = unknown")
     note: str | None
@@ -254,6 +263,11 @@ def game_detail(g: domain.Game, lane: str, note: str | None, next_position: int 
             "protondb_reports": int(g.proton.total) if g.proton else None,
             "genres": list(g.genres),
             "tags": list(g.tags),
+            "publishers": list(g.publishers),
+            "developers": list(g.developers),
+            "reviews": {"desc": g.reviews.desc, "pct": g.reviews.pct, "total": int(g.reviews.total)}
+            if g.reviews
+            else None,
             "year": _int(g.year),
             "controller": controller,
             "note": note,

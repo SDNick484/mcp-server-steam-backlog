@@ -8,7 +8,7 @@ import shutil
 import subprocess
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
@@ -330,3 +330,50 @@ def test_sample_library_has_publishers_empty_and_absent() -> None:
     assert (raw["Mystery Prototype"]["developers"], raw["Mystery Prototype"]["reviews"]) == ([], None)
     assert "publishers" not in raw["Portal"] and "reviews" not in raw["Portal"]
     assert sum(1 for g in raw.values() if g.get("publishers")) == 39
+
+
+# --------------------------------------------------------------------------- publisher, developer, review, mc max
+def test_publisher_and_developer_filters_match_by_name_key() -> None:
+    devolver = {"Inscryption", "GRIS", "Katana ZERO", "Hotline Miami"}
+    for spelling in ("Devolver Digital", "DEVOLVER DIGITAL™", "Devolver Digital, Inc.", "devolver digital inc"):
+        assert names(find(domain.Filters(publishers=domain.name_filter([spelling])))) == devolver
+    assert names(find(domain.Filters(developers=domain.name_filter(["Valve"])))) == {"Portal 2", "Half-Life: Alyx"}
+    with_unknown = names(find(domain.Filters(developers=domain.name_filter(["Valve"]), include_unknown=True)))
+    assert {"Portal", "COCOON", "Mystery Prototype"} <= with_unknown
+
+
+def test_a_name_that_normalizes_to_nothing_is_no_filter() -> None:
+    assert domain.name_filter(["™", "!!", "  "]) == ()
+    assert len(find(domain.Filters(publishers=domain.name_filter(["™"]))).games) == 49
+
+
+def test_review_levels_and_metacritic_max() -> None:
+    assert get_args(domain.ReviewLevel) == backlog_query.REVIEW_KEYS
+    assert names(find(domain.Filters(reviews=("mostly-positive",)))) == {"Destiny 2"}
+    capped = find(domain.Filters(metacritic_max=89)).games
+    assert capped and all(g.metacritic and g.metacritic <= 89 for g in capped)
+    assert len(find(domain.Filters(metacritic_max=89, include_unknown=True)).games) == len(capped) + 8
+
+
+def test_new_filters_relax_in_order() -> None:
+    f = domain.Filters(metacritic_min=1, metacritic_max=99, reviews=("positive",), year_from=2000,
+                       publishers=("x",), developers=("y",), tags=("z",))  # fmt: skip
+    assert f.active() == ["metacritic_min", "metacritic_max", "reviews", "year", "publishers", "developers", "tags"]
+    for name in f.active():
+        assert name not in f.without(name).active()
+    r = find(domain.Filters(deck=(1,), publishers=domain.name_filter(["Devolver Digital"])))
+    assert (r.exact, r.relaxed, names(r)) == (False, ["publishers"], {"Half-Life: Alyx", "Destiny 2"})
+
+
+def test_metacritic_min_above_max_relaxes_min_first() -> None:
+    r = find(domain.Filters(metacritic_min=95, metacritic_max=90))
+    assert (r.exact, r.relaxed) == (False, ["metacritic_min"]) and r.games
+
+
+def test_passes_applies_the_new_filters_directly() -> None:
+    gs = games()
+    hotline = by_name(gs, "Hotline Miami")
+    f = domain.Filters(publishers=domain.name_filter(["devolver digital inc"]), reviews=("overwhelmingly-positive",))
+    assert domain.passes(hotline, f, {}, {})
+    assert not domain.passes(hotline, replace(f, developers=domain.name_filter(["Valve"])), {}, {})
+    assert not domain.passes(hotline, replace(f, metacritic_max=10), {}, {})
