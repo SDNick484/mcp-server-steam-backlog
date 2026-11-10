@@ -26,7 +26,8 @@ reasoning behind non-obvious changes instead of only making them.
 - `src/steam_backlog_mcp/_build.py`: the build commit shown by `--version` and `doctor`, filled in by
   `git archive` through `.gitattributes`
 - `.github/scripts/privacy_scan.py` and `tests/test_privacy_scan.py`: the public-repo scan, copied from
-  steam-backlog-triage `0003503` (also excluded from ruff)
+  steam-backlog-triage `0003503` (also excluded from ruff), plus `.github/privacy-scan-allowed-commits`: commits
+  whose author and committer it skips
 - `src/steam_backlog_mcp/models.py`: Pydantic output models (each tool's outputSchema) and builders
 - `src/steam_backlog_mcp/server.py`: registrations only, in `TOOL_GROUPS` (read, write, export, resources,
   prompts). `AppState` is built in `lifespan()`: once per process over HTTP, once per session in tests

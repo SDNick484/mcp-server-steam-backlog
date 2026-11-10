@@ -13,6 +13,9 @@ Checks, over every tracked file (and untracked ones that are not ignored, so it 
 
 A four-part version number (a build number after a three-part version) looks like an address and is flagged; write it differently or mark the line.
 A line may carry the text `privacy-scan: allow` to be skipped (use sparingly, and say why beside it).
+A commit already pushed can't carry that mark. If its author or committer is flagged and rewriting public history
+isn't worth it, list its full SHA in .github/privacy-scan-allowed-commits (one per line, then the reason). That
+skips only that commit's author and committer; its message is still scanned, and so is every other commit.
 
 THIS OUTPUT IS PUBLIC (CI logs of a public repo are readable by anyone). So it prints only where and which
 rule - file:line and the rule name, or the commit and the rule name - and never the matched text. For the
@@ -41,6 +44,24 @@ DOC_NETS = [ipaddress.ip_network(n) for n in ("192.0.2.0/24", "198.51.100.0/24",
 PRIVATE_NETS = [ipaddress.ip_network(n) for n in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16")]
 FIXTURE_DIRS = ("tests/fixtures/",)
 ALLOW_MARK = "privacy-scan: allow"
+ALLOWED_COMMITS_FILE = ".github/privacy-scan-allowed-commits"
+FULL_SHA = re.compile(r"[0-9a-f]{40}")
+
+
+def read_allowed_commits(root: Path) -> set[str]:
+    """The full SHAs in ALLOWED_COMMITS_FILE: `<sha> <reason>` per line, `#` comments and blank lines ignored."""
+    path = root / ALLOWED_COMMITS_FILE
+    if not path.is_file():
+        return set()
+    shas = set()
+    for lineno, line in enumerate(path.read_text().splitlines(), 1):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        sha = line.split()[0]
+        if not FULL_SHA.fullmatch(sha):
+            raise ValueError(f"{ALLOWED_COMMITS_FILE}:{lineno}: expected a full 40-character commit SHA first")
+        shas.add(sha)
+    return shas
 
 
 def ip_is_fine(text: str) -> bool:
@@ -98,6 +119,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: could not list tracked files in {root}: {type(e).__name__}", file=sys.stderr)
         return 2
 
+    try:
+        allowed_commits = read_allowed_commits(root)
+    except ValueError as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 2
+
     findings: list[tuple[str, str]] = []
     scanned = 0
     for rel in files:
@@ -128,7 +155,10 @@ def main(argv: list[str] | None = None) -> int:
                 continue
             commits += 1
             sha = parts[0].strip()[:10]
-            for label, chunk in (("author", parts[1]), ("committer", parts[2]), ("message", parts[3])):
+            fields = [("author", parts[1]), ("committer", parts[2]), ("message", parts[3])]
+            if parts[0].strip() in allowed_commits:
+                fields = fields[2:]  # an identity listed in ALLOWED_COMMITS_FILE; the message is still checked
+            for label, chunk in fields:
                 scan_text(chunk, f"commit {sha} {label}", denylist, check_ips=True, findings=findings)
 
     seen = set()
