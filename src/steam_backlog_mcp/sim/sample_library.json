@@ -25,6 +25,17 @@
    "year": 2019,
    "controller": null,
    "proton": null,
+   "publishers": [
+    "Adam Robinson-Yu"
+   ],
+   "developers": [
+    "Adam Robinson-Yu"
+   ],
+   "reviews": {
+    "total": 22000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   },
    "tags": [
     "Cozy",
     "Exploration",
@@ -54,6 +65,17 @@
    "proton": {
     "tier": "platinum",
     "total": 3100
+   },
+   "publishers": [
+    "Larian Studios"
+   ],
+   "developers": [
+    "Larian Studios"
+   ],
+   "reviews": {
+    "total": 530000,
+    "pct": 96,
+    "desc": "Overwhelmingly Positive"
    }
   },
   {
@@ -74,7 +96,20 @@
    "metacritic": 94,
    "year": 2018,
    "controller": "full",
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Maddy Makes Games Inc."
+   ],
+   "developers": [
+    "Maddy Makes Games",
+    "Extremely OK Games",
+    "Ltd."
+   ],
+   "reviews": {
+    "total": 85000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 1229240,
@@ -95,7 +130,10 @@
    "metacritic": null,
    "year": 2022,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null
   },
   {
    "appid": 1497440,
@@ -116,7 +154,10 @@
    "metacritic": 88,
    "year": 2023,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null
   },
   {
    "appid": 870780,
@@ -140,6 +181,17 @@
    "proton": {
     "tier": "gold",
     "total": 980
+   },
+   "publishers": [
+    "505 Games"
+   ],
+   "developers": [
+    "Remedy Entertainment"
+   ],
+   "reviews": {
+    "total": 70000,
+    "pct": 91,
+    "desc": "Very Positive"
    }
   },
   {
@@ -164,6 +216,17 @@
    "proton": {
     "tier": "borked",
     "total": 500
+   },
+   "publishers": [
+    "CD PROJEKT RED"
+   ],
+   "developers": [
+    "CD PROJEKT RED"
+   ],
+   "reviews": {
+    "total": 640000,
+    "pct": 80,
+    "desc": "Very Positive"
    }
   },
   {
@@ -185,7 +248,18 @@
    "metacritic": 90,
    "year": 2023,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "MINTROCKET"
+   ],
+   "developers": [
+    "MINTROCKET"
+   ],
+   "reviews": {
+    "total": 85000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 588650,
@@ -207,6 +281,17 @@
    "year": 2018,
    "controller": null,
    "proton": null,
+   "publishers": [
+    "Motion Twin"
+   ],
+   "developers": [
+    "Motion Twin"
+   ],
+   "reviews": {
+    "total": 130000,
+    "pct": 96,
+    "desc": "Overwhelmingly Positive"
+   },
    "tags": [
     "Roguelite",
     "Metroidvania",
@@ -234,7 +319,18 @@
    "metacritic": 82,
    "year": 2020,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "505 Games"
+   ],
+   "developers": [
+    "Kojima Productions"
+   ],
+   "reviews": {
+    "total": 70000,
+    "pct": 88,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 1085660,
@@ -251,7 +347,18 @@
    "metacritic": 83,
    "year": 2019,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Bungie"
+   ],
+   "developers": [
+    "Bungie"
+   ],
+   "reviews": {
+    "total": 570000,
+    "pct": 78,
+    "desc": "Mostly Positive"
+   }
   },
   {
    "appid": 632470,
@@ -271,7 +378,18 @@
    "metacritic": 91,
    "year": 2019,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "ZA/UM"
+   ],
+   "developers": [
+    "ZA/UM"
+   ],
+   "reviews": {
+    "total": 150000,
+    "pct": 90,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 2280,
@@ -339,7 +457,18 @@
    "metacritic": 88,
    "year": 2020,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Bethesda Softworks"
+   ],
+   "developers": [
+    "id Software"
+   ],
+   "reviews": {
+    "total": 140000,
+    "pct": 91,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 1245620,
@@ -363,6 +492,18 @@
    "proton": {
     "tier": "gold",
     "total": 3900
+   },
+   "publishers": [
+    "FromSoftware Inc.",
+    "Bandai Namco Entertainment"
+   ],
+   "developers": [
+    "FromSoftware Inc."
+   ],
+   "reviews": {
+    "total": 800000,
+    "pct": 90,
+    "desc": "Very Positive"
    },
    "tags": [
     "Souls-like",
@@ -391,7 +532,18 @@
    "metacritic": 81,
    "year": 2016,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Panic Inc."
+   ],
+   "developers": [
+    "Campo Santo"
+   ],
+   "reviews": {
+    "total": 70000,
+    "pct": 89,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 683320,
@@ -412,7 +564,18 @@
    "metacritic": 84,
    "year": 2018,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Devolver Digital Inc."
+   ],
+   "developers": [
+    "Nomada Studio"
+   ],
+   "reviews": {
+    "total": 20000,
+    "pct": 95,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 1145360,
@@ -436,6 +599,17 @@
    "proton": {
     "tier": "native",
     "total": 120
+   },
+   "publishers": [
+    "Supergiant Games"
+   ],
+   "developers": [
+    "Supergiant Games"
+   ],
+   "reviews": {
+    "total": 240000,
+    "pct": 98,
+    "desc": "Overwhelmingly Positive"
    },
    "tags": [
     "Roguelite",
@@ -467,6 +641,17 @@
    "proton": {
     "tier": "gold",
     "total": 410
+   },
+   "publishers": [
+    "Valve"
+   ],
+   "developers": [
+    "Valve"
+   ],
+   "reviews": {
+    "total": 100000,
+    "pct": 96,
+    "desc": "Overwhelmingly Positive"
    }
   },
   {
@@ -488,6 +673,17 @@
    "year": 2017,
    "controller": null,
    "proton": null,
+   "publishers": [
+    "Team Cherry"
+   ],
+   "developers": [
+    "Team Cherry"
+   ],
+   "reviews": {
+    "total": 330000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   },
    "tags": [
     "Metroidvania",
     "Souls-like",
@@ -518,6 +714,17 @@
    "proton": {
     "tier": "silver",
     "total": 210
+   },
+   "publishers": [
+    "DEVOLVER DIGITAL"
+   ],
+   "developers": [
+    "Dennaton Games"
+   ],
+   "reviews": {
+    "total": 80000,
+    "pct": 96,
+    "desc": "Overwhelmingly Positive"
    }
   },
   {
@@ -539,7 +746,18 @@
    "metacritic": 85,
    "year": 2021,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Devolver Digital"
+   ],
+   "developers": [
+    "Daniel Mullins Games"
+   ],
+   "reviews": {
+    "total": 34000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 590380,
@@ -560,7 +778,18 @@
    "metacritic": 90,
    "year": 2018,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Subset Games"
+   ],
+   "developers": [
+    "Subset Games"
+   ],
+   "reviews": {
+    "total": 25000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 243970,
@@ -581,7 +810,10 @@
    "metacritic": 80,
    "year": 2015,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null
   },
   {
    "appid": 460950,
@@ -602,7 +834,18 @@
    "metacritic": 83,
    "year": 2019,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Devolver Digital"
+   ],
+   "developers": [
+    "Askiisoft"
+   ],
+   "reviews": {
+    "total": 33000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 370910,
@@ -624,6 +867,9 @@
    "year": 2016,
    "controller": null,
    "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null,
    "tags": []
   },
   {
@@ -645,7 +891,10 @@
    "metacritic": 86,
    "year": 2021,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null
   },
   {
    "appid": 412020,
@@ -666,7 +915,18 @@
    "metacritic": 82,
    "year": 2019,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Deep Silver"
+   ],
+   "developers": [
+    "4A Games"
+   ],
+   "reviews": {
+    "total": 56000,
+    "pct": 86,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 999990,
@@ -681,6 +941,9 @@
    "year": null,
    "controller": null,
    "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null,
    "tags": []
   },
   {
@@ -702,7 +965,18 @@
    "metacritic": 85,
    "year": 2020,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Annapurna Interactive"
+   ],
+   "developers": [
+    "Mobius Digital"
+   ],
+   "reviews": {
+    "total": 60000,
+    "pct": 95,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 1205520,
@@ -723,7 +997,18 @@
    "metacritic": 86,
    "year": 2022,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Xbox Game Studios"
+   ],
+   "developers": [
+    "Obsidian Entertainment"
+   ],
+   "reviews": {
+    "total": 17000,
+    "pct": 91,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 2231450,
@@ -743,7 +1028,10 @@
    "metacritic": null,
    "year": 2023,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [],
+   "developers": [],
+   "reviews": null
   },
   {
    "appid": 400,
@@ -791,6 +1079,17 @@
     "tier": "platinum",
     "total": 350
    },
+   "publishers": [
+    "Valve"
+   ],
+   "developers": [
+    "Valve"
+   ],
+   "reviews": {
+    "total": 330000,
+    "pct": 98,
+    "desc": "Overwhelmingly Positive"
+   },
    "tags": [
     "Puzzle",
     "Co-op",
@@ -821,6 +1120,17 @@
    "proton": {
     "tier": "gold",
     "total": 2400
+   },
+   "publishers": [
+    "Rockstar Games"
+   ],
+   "developers": [
+    "Rockstar Games"
+   ],
+   "reviews": {
+    "total": 580000,
+    "pct": 81,
+    "desc": "Very Positive"
    }
   },
   {
@@ -842,7 +1152,18 @@
    "metacritic": 89,
    "year": 2018,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "3909 LLC"
+   ],
+   "developers": [
+    "3909 LLC"
+   ],
+   "reviews": {
+    "total": 26000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 1244090,
@@ -863,7 +1184,18 @@
    "metacritic": 89,
    "year": 2023,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Sabotage Studio"
+   ],
+   "developers": [
+    "Sabotage Studio"
+   ],
+   "reviews": {
+    "total": 14000,
+    "pct": 94,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 1262350,
@@ -884,7 +1216,18 @@
    "metacritic": null,
    "year": 2022,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Humble Games"
+   ],
+   "developers": [
+    "rose-engine"
+   ],
+   "reviews": {
+    "total": 26000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 646570,
@@ -906,6 +1249,17 @@
    "year": 2019,
    "controller": null,
    "proton": null,
+   "publishers": [
+    "Mega Crit"
+   ],
+   "developers": [
+    "Mega Crit"
+   ],
+   "reviews": {
+    "total": 150000,
+    "pct": 97,
+    "desc": "Overwhelmingly Positive"
+   },
    "tags": [
     "Deckbuilding",
     "Roguelike",
@@ -932,7 +1286,18 @@
    "metacritic": 84,
    "year": 2020,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Thunder Lotus Games"
+   ],
+   "developers": [
+    "Thunder Lotus Games"
+   ],
+   "reviews": {
+    "total": 15000,
+    "pct": 91,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 413150,
@@ -956,6 +1321,17 @@
    "proton": {
     "tier": "native",
     "total": 1200
+   },
+   "publishers": [
+    "ConcernedApe"
+   ],
+   "developers": [
+    "ConcernedApe"
+   ],
+   "reviews": {
+    "total": 700000,
+    "pct": 98,
+    "desc": "Overwhelmingly Positive"
    }
   },
   {
@@ -977,7 +1353,18 @@
    "metacritic": 87,
    "year": 2018,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Unknown Worlds Entertainment"
+   ],
+   "developers": [
+    "Unknown Worlds Entertainment"
+   ],
+   "reviews": {
+    "total": 250000,
+    "pct": 95,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 292030,
@@ -998,7 +1385,18 @@
    "metacritic": 93,
    "year": 2015,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "CD PROJEKT RED"
+   ],
+   "developers": [
+    "CD PROJEKT RED"
+   ],
+   "reviews": {
+    "total": 700000,
+    "pct": 96,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 1237970,
@@ -1018,7 +1416,18 @@
    "metacritic": 86,
    "year": 2016,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Electronic Arts"
+   ],
+   "developers": [
+    "Respawn Entertainment"
+   ],
+   "reviews": {
+    "total": 55000,
+    "pct": 93,
+    "desc": "Very Positive"
+   }
   },
   {
    "appid": 553420,
@@ -1040,6 +1449,17 @@
    "year": 2022,
    "controller": "full",
    "proton": null,
+   "publishers": [
+    "Finji"
+   ],
+   "developers": [
+    "TUNIC Team"
+   ],
+   "reviews": {
+    "total": 28000,
+    "pct": 95,
+    "desc": "Very Positive"
+   },
    "tags": [
     "Soulslike",
     "Adventure",
@@ -1068,6 +1488,17 @@
    "year": 2021,
    "controller": null,
    "proton": null,
+   "publishers": [
+    "Humble Games"
+   ],
+   "developers": [
+    "Witch Beam"
+   ],
+   "reviews": {
+    "total": 27000,
+    "pct": 93,
+    "desc": "Very Positive"
+   },
    "tags": [
     "Cozy",
     "Puzzle",
@@ -1094,7 +1525,18 @@
    "metacritic": null,
    "year": 2022,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Poncle"
+   ],
+   "developers": [
+    "Poncle"
+   ],
+   "reviews": {
+    "total": 340000,
+    "pct": 98,
+    "desc": "Overwhelmingly Positive"
+   }
   },
   {
    "appid": 501300,
@@ -1114,7 +1556,18 @@
    "metacritic": 88,
    "year": 2017,
    "controller": null,
-   "proton": null
+   "proton": null,
+   "publishers": [
+    "Annapurna Interactive"
+   ],
+   "developers": [
+    "Giant Sparrow"
+   ],
+   "reviews": {
+    "total": 17000,
+    "pct": 95,
+    "desc": "Very Positive"
+   }
   }
  ]
 }

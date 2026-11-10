@@ -308,3 +308,14 @@ def test_tags_relax_before_genres() -> None:
     r = find(replace(f, controller=()))
     assert (r.exact, r.relaxed) == (False, ["tags"])
     assert "Portal 2" in names(r)
+
+
+def test_sample_library_has_publishers_empty_and_absent() -> None:
+    raw = {g["name"]: g for g in json.loads(FIXTURE.read_text(encoding="utf-8"))["games"] if g["name"] != "DOOM"}
+    assert raw["Hotline Miami"]["publishers"] == ["DEVOLVER DIGITAL"]
+    assert raw["ELDEN RING"]["publishers"] == ["FromSoftware Inc.", "Bandai Namco Entertainment"]
+    assert raw["Destiny 2"]["reviews"] == {"total": 570000, "pct": 78, "desc": "Mostly Positive"}
+    assert (raw["COCOON"]["publishers"], raw["COCOON"]["reviews"]) == ([], None)
+    assert (raw["Mystery Prototype"]["developers"], raw["Mystery Prototype"]["reviews"]) == ([], None)
+    assert "publishers" not in raw["Portal"] and "reviews" not in raw["Portal"]
+    assert sum(1 for g in raw.values() if g.get("publishers")) == 39
