@@ -133,9 +133,11 @@ def test_publisher_and_developer_filters_match_by_name_key() -> None:
     with_unknown = names(find(domain.Filters(developers=domain.name_filter(["Valve"]), include_unknown=True)))
     assert {"Portal", "COCOON", "Mystery Prototype"} <= with_unknown
 
+
 def test_a_name_that_normalizes_to_nothing_is_no_filter() -> None:
     assert domain.name_filter(["™", "!!", "  "]) == ()
     assert len(find(domain.Filters(publishers=domain.name_filter(["™"]))).games) == 49
+
 
 def test_review_levels_and_metacritic_max() -> None:
     assert get_args(domain.ReviewLevel) == backlog_query.REVIEW_KEYS
@@ -143,6 +145,7 @@ def test_review_levels_and_metacritic_max() -> None:
     capped = find(domain.Filters(metacritic_max=89)).games
     assert capped and all(g.metacritic and g.metacritic <= 89 for g in capped)
     assert len(find(domain.Filters(metacritic_max=89, include_unknown=True)).games) == len(capped) + 8
+
 
 def test_new_filters_relax_in_order() -> None:
     f = domain.Filters(metacritic_min=1, metacritic_max=99, reviews=("positive",), year_from=2000,
@@ -152,6 +155,7 @@ def test_new_filters_relax_in_order() -> None:
         assert name not in f.without(name).active()
     r = find(domain.Filters(deck=(1,), publishers=domain.name_filter(["Devolver Digital"])))
     assert (r.exact, r.relaxed, names(r)) == (False, ["publishers"], {"Half-Life: Alyx", "Destiny 2"})
+
 
 def test_metacritic_min_above_max_relaxes_min_first() -> None:
     r = find(domain.Filters(metacritic_min=95, metacritic_max=90))
@@ -189,6 +193,7 @@ async def test_stats_publisher_groups_spellings(fake: FakeBacklog) -> None:
     assert (s["total"], s["known"], s["unknown"]["games"]) == (49, 39, 10)
     assert (s["rows"][0]["label"], s["rows"][0]["games"]) == ("Devolver Digital", 4)
 
+
 async def test_stats_folds_and_orders(fake: FakeBacklog) -> None:
     years = await call("backlog_get_stats", {"dimension": "year"})
     assert len(years["rows"]) == 25 and years["other"]["values"] == 6 and years["rows"][-1]["label"] == "2023"
@@ -196,6 +201,7 @@ async def test_stats_folds_and_orders(fake: FakeBacklog) -> None:
     assert len(genres["rows"]) == 25 and genres["other"]["values"] == 1
     rv = await call("backlog_get_stats", {"dimension": "reviews"})
     assert [r["label"] for r in rv["rows"]] == ["Overwhelmingly Positive", "Very Positive", "Mostly Positive"]
+
 
 async def test_stats_follows_filters_and_handles_empty(fake: FakeBacklog) -> None:
     b = await call("backlog_get_stats", {"dimension": "deck", "backlog_only": True, "deck": ["verified"]})
