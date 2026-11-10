@@ -206,14 +206,15 @@ ruff check . && ruff format --check . && mypy && pytest --cov
 ```
 
 - The contract tests run against a fake, against the fake imitating API 1, and against a real
-  `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default: its store-tags merge commit, set in `tests/conftest.py`),
+  `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default: steam-backlog-triage main after its CLAUDE.md and pin PR, `4d0b53c`, set in `tests/conftest.py`),
   `BACKLOG_CHECKOUT=<dir>` uses a local checkout. See `docs/handoff-pr-a.md`.
 - `tests/fixtures/score_vectors.json` comes from `node scripts/gen_score_vectors.mjs path/to/backlog.html`.
   CI regenerates it and fails if the page's `score()` changed.
 - `src/steam_backlog_mcp/backlog_query.py` is the dashboard's query layer, copied verbatim from
   steam-backlog-triage at the commit in `query.lock`. Don't edit it here: change it there, then
-  `python scripts/sync_query.py --update`. `python scripts/sync_query.py --check` (CI runs it) fails on an
-  edited copy or a stale lock.
+  `python scripts/sync_query.py --update`. `python scripts/sync_query.py --check` (CI runs it with
+  `--require-online`) fails on an edited copy, and on a lock whose commit or sha256 doesn't match GitHub; without
+  `--require-online`, a network error skips the online half with a notice.
 - `mcp-server-steam-backlog --version` (and `doctor`) show the build commit for wheels built from
   `git archive`, and `unknown` otherwise.
 - Files shared with the sibling MCP servers (`remote.py`, `logsafe.py`, `lookup.py`, `ratelimit.py`,

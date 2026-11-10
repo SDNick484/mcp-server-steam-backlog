@@ -5,7 +5,8 @@ contract tests also run against a real backlog_server.py (``real_backlog``):
 
   BACKLOG_CHECKOUT=/path/to/steam-backlog-triage   use that checkout as it is (e.g. PR A's branch)
   BACKLOG_REF=<branch, tag or sha>                 clone github.com/SDNick484/steam-backlog-triage at it
-                                                   (default: the store-tags merge commit, API 2)
+                                                   (default: 4d0b53c, triage main after its CLAUDE.md
+                                                   and pin PR; API 2)
   BACKLOG_REQUIRE_REAL=1                           fail instead of skipping when it can't be had (CI)
 """
 

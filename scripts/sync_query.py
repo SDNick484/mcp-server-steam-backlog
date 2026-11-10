@@ -10,15 +10,18 @@ package with no runtime dependency on the sibling) and query.lock pins where the
     python scripts/sync_query.py --check               exit 1 if the copy was edited, or isn't the locked commit's
     python scripts/sync_query.py --check --offline     only the first half: the copy against the lock's sha256
     python scripts/sync_query.py --check --latest      exit 1 if the copy differs from main's file instead
+    python scripts/sync_query.py --check --require-online   exit 2 if the online half can't run (CI uses this)
     ... --source DIR                                   read DIR/backlog_query.py (a local checkout), not GitHub
     ... --force                                        with --update: overwrite a copy that was edited locally
 
 query.lock holds `repo`, `commit`, `path` (the file in that repo), `dest` (where the copy goes here)
 and `sha256` (of the file's bytes). With `--source`, `--update` takes the commit from
 `git -C DIR rev-parse HEAD` and `--check` compares the copy with DIR's file, committed or not.
+`--update --source` refuses (exit 2, `--force` or not) a DIR whose file differs from `git show
+HEAD:<path>`: the lock must name a commit that holds the vendored bytes.
 
 Exit status: 0 in sync, 1 the copy differs (--check), 2 anything else (bad arguments, an unreadable
-lock, a copy with local edits, the network).
+lock, a copy with local edits, an uncommitted source file, `--require-online` and the network failed).
 
 Why it works the way it does:
 - The file is fetched by commit SHA, never by branch name. A SHA names one immutable snapshot, and
@@ -31,8 +34,9 @@ Why it works the way it does:
   or (at worst) a copy the offline check flags.
 - `--check` is two checks. The offline one (the copy hashes to the lock's sha256) needs nothing but
   this repo, so it runs anywhere. The online one (the locked commit's file hashes to that sha256)
-  catches a lock that was edited by hand. A network failure in the online half prints a notice and
-  leaves the exit status alone: the half that can run decides.
+  catches a lock that was edited by hand. A 404 there (the commit, or main's file, isn't in the repo) is
+  a failure, exit 1. Any other network failure prints a notice and leaves the exit status alone, so
+  the check still works on a laptop offline; `--require-online` makes it exit 2 instead, and CI uses it.
 - A copy that doesn't match the lock has been edited by hand, which is against the rules (change
   steam-backlog-triage, then sync). `--update` refuses to overwrite it unless `--force`, so an edit
   made while debugging isn't thrown away silently.
@@ -72,6 +76,10 @@ LOCK_HEADER = """\
 
 class SyncError(Exception):
     """Something the user has to fix; the message says what."""
+
+
+class NotFoundError(SyncError):
+    """GitHub answered 404: the commit, file or repo isn't there."""
 
 
 def sha256_of(data: bytes) -> str:
@@ -141,7 +149,8 @@ def _get(url: str, accept: str | None = None) -> bytes:
             return body
     except urllib.error.HTTPError as exc:
         hint = " (rate limited? set GITHUB_TOKEN)" if exc.code in (403, 429) else ""
-        raise SyncError(f"GET {url}: HTTP {exc.code} {exc.reason}{hint}") from None
+        error = NotFoundError if exc.code == 404 else SyncError
+        raise error(f"GET {url}: HTTP {exc.code} {exc.reason}{hint}") from None
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         reason = getattr(exc, "reason", exc)
         raise SyncError(f"GET {url}: {reason}") from None
@@ -172,6 +181,19 @@ def read_source(source: Path, path: str) -> bytes:
         return target.read_bytes()
     except OSError as exc:
         raise SyncError(f"{source / path}: {exc.strerror}") from None
+
+
+def source_committed(source: Path, path: str) -> bytes:
+    """`path` as committed at the checkout's HEAD."""
+    try:
+        out = subprocess.run(
+            ["git", "-C", str(source), "show", f"HEAD:{path}"], capture_output=True, timeout=10, check=False
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SyncError(f"couldn't run git in {source}: {exc}") from None
+    if out.returncode != 0:
+        raise SyncError(f"{path} isn't committed at HEAD in {source}; commit it there first")
+    return out.stdout
 
 
 def source_head(source: Path) -> str:
@@ -247,7 +269,16 @@ def check(root: Path, lock: Lock, args: argparse.Namespace) -> int:
     try:
         if args.latest:
             commit = resolve(lock.repo, "main")
-            if sha256_of(fetch(lock.repo, commit, lock.path)) != local:
+            try:
+                theirs = sha256_of(fetch(lock.repo, commit, lock.path))
+            except NotFoundError:
+                print(
+                    f"sync_query.py: {lock.path} isn't in {lock.repo} main ({commit[:7]}). "
+                    "Fix: check the path in query.lock",
+                    file=sys.stderr,
+                )
+                return 1
+            if theirs != local:
                 print(
                     f"sync_query.py: {lock.dest} differs from {lock.repo} main ({commit[:7]}). "
                     "Fix: python scripts/sync_query.py --update",
@@ -256,7 +287,16 @@ def check(root: Path, lock: Lock, args: argparse.Namespace) -> int:
                 return 1
             print(f"{lock.dest} matches {lock.repo} main ({commit[:7]})")
         else:
-            if sha256_of(fetch(lock.repo, lock.commit, lock.path)) != lock.sha256:
+            try:
+                locked = sha256_of(fetch(lock.repo, lock.commit, lock.path))
+            except NotFoundError:
+                print(
+                    f"sync_query.py: the locked commit isn't in {lock.repo}: {lock.path} at {lock.commit[:7]} "
+                    "gives 404. Fix: python scripts/sync_query.py --update",
+                    file=sys.stderr,
+                )
+                return 1
+            if locked != lock.sha256:
                 print(
                     f"sync_query.py: {LOCK} is wrong: {lock.path} at {lock.commit[:7]} in {lock.repo} "
                     "doesn't hash to its sha256. "
@@ -266,6 +306,8 @@ def check(root: Path, lock: Lock, args: argparse.Namespace) -> int:
                 return 1
             print(f"{lock.dest} matches {lock.repo} at {lock.commit[:7]} (locked)")
     except SyncError as exc:
+        if args.require_online:
+            raise SyncError(f"the online check couldn't run ({exc}); --require-online makes that a failure") from None
         print(f"sync_query.py: notice: online check skipped ({exc})", file=sys.stderr)
     return 0
 
@@ -310,6 +352,11 @@ def update(root: Path, lock: Lock, args: argparse.Namespace) -> int:
     if args.source:
         commit = source_head(args.source)
         data = read_source(args.source, lock.path)
+        if data != source_committed(args.source, lock.path):
+            raise SyncError(
+                f"{args.source / lock.path} has uncommitted changes, so no commit holds these bytes. "
+                "Commit it in the source checkout first (--force doesn't override this)."
+            )
         origin = f"{args.source}"
     else:
         commit = resolve(lock.repo, args.ref)
@@ -344,6 +391,11 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--check", action="store_true", help="don't write; exit 1 if the copy differs")
     parser.add_argument("--offline", action="store_true", help="with --check: only compare the copy with the lock")
     parser.add_argument("--latest", action="store_true", help="with --check: compare against main, not the lock")
+    parser.add_argument(
+        "--require-online",
+        action="store_true",
+        help="with --check: exit 2 if the online half can't run, instead of skipping it",
+    )
     parser.add_argument("--force", action="store_true", help="when writing: overwrite a copy that was edited locally")
     parser.add_argument("--source", type=Path, help="read the file from this local steam-backlog-triage checkout")
     parser.add_argument(
@@ -359,6 +411,10 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
         parser.error("--force goes with writing; --check never writes")
     if not args.update and args.ref != "main":
         parser.error("--ref goes with --update")
+    if args.require_online and not args.check:
+        parser.error("--require-online goes with --check")
+    if args.require_online and (args.offline or args.source):
+        parser.error("--require-online needs the online check; --offline and --source skip it")
     if not args.check and (args.offline or args.latest):
         parser.error("--offline and --latest go with --check")
     if args.offline and args.latest:

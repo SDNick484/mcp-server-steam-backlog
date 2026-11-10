@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import shutil
 import subprocess
 import sys
@@ -119,3 +120,95 @@ def test_restore_refuses_a_source_that_is_not_the_locked_file(copy_root: Path, t
     assert "nothing was written" in result.stderr
     assert not (copy_root / DEST).exists()
     assert (copy_root / LOCK).read_bytes() == lock_before
+
+
+# --- the online half of --check, with the network stubbed at the script's HTTP helper ----------
+def load_script():  # type: ignore[no-untyped-def]
+    spec = importlib.util.spec_from_file_location("sync_query_under_test", SCRIPT)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module  # dataclasses looks the module up by name
+    spec.loader.exec_module(module)
+    return module
+
+
+def stub_get(monkeypatch: pytest.MonkeyPatch, module, error: Exception | None = None, body: bytes = b""):  # type: ignore[no-untyped-def]
+    calls: list[str] = []
+
+    def fake(url: str, accept: str | None = None) -> bytes:
+        calls.append(url)
+        if error is not None:
+            raise error
+        return body
+
+    monkeypatch.setattr(module, "_get", fake)
+    return calls
+
+
+def test_check_fails_when_the_locked_commit_is_not_on_github(
+    copy_root: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_script()
+    stub_get(monkeypatch, module, module.NotFoundError("GET x: HTTP 404 Not Found"))
+    assert module.main(["--root", str(copy_root), "--check"]) == 1
+    assert "locked commit isn't in" in capsys.readouterr().err
+
+
+def test_check_skips_the_online_half_on_a_network_error(
+    copy_root: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_script()
+    stub_get(monkeypatch, module, module.SyncError("GET x: connection refused"))
+    assert module.main(["--root", str(copy_root), "--check"]) == 0
+    assert "notice: online check skipped" in capsys.readouterr().err
+
+
+def test_check_require_online_fails_on_a_network_error(
+    copy_root: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_script()
+    stub_get(monkeypatch, module, module.SyncError("GET x: connection refused"))
+    assert module.main(["--root", str(copy_root), "--check", "--require-online"]) == 2
+    assert "--require-online" in capsys.readouterr().err
+
+
+def test_check_passes_when_the_locked_commit_has_the_locked_bytes(
+    copy_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module = load_script()
+    stub_get(monkeypatch, module, body=(copy_root / DEST).read_bytes())
+    assert module.main(["--root", str(copy_root), "--check", "--require-online"]) == 0
+
+
+def test_check_latest_fails_when_main_has_no_such_file(
+    copy_root: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = load_script()
+    sha = "a" * 40
+    calls: list[str] = []
+
+    def fake(url: str, accept: str | None = None) -> bytes:
+        calls.append(url)
+        if "api.github.com" in url:
+            return sha.encode()
+        raise module.NotFoundError("GET x: HTTP 404 Not Found")
+
+    monkeypatch.setattr(module, "_get", fake)
+    assert module.main(["--root", str(copy_root), "--check", "--latest"]) == 1
+    assert "isn't in" in capsys.readouterr().err
+    assert len(calls) == 2
+
+
+def test_require_online_is_only_for_the_online_check(copy_root: Path) -> None:
+    assert run("--root", copy_root, "--require-online").returncode == 2
+    assert run("--root", copy_root, "--check", "--offline", "--require-online").returncode == 2
+
+
+def test_update_refuses_a_source_file_that_is_not_committed(copy_root: Path, triage: Path) -> None:
+    (triage / "backlog_query.py").write_text("VALUE = 2  # dirty\n", encoding="utf-8")
+    before = (copy_root / DEST).read_bytes(), (copy_root / LOCK).read_bytes()
+    for extra in ((), ("--force",)):
+        result = run("--root", copy_root, "--source", triage, "--update", *extra)
+        assert result.returncode == 2
+        assert "uncommitted" in result.stderr
+    assert ((copy_root / DEST).read_bytes(), (copy_root / LOCK).read_bytes()) == before

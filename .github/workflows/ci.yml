@@ -138,7 +138,7 @@ jobs:
         with:
           python-version: "3.11"
       - name: backlog_query.py matches the locked commit
-        run: python scripts/sync_query.py --check
+        run: python scripts/sync_query.py --check --require-online
       - name: backlog_query.py matches steam-backlog-triage main
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        run: python scripts/sync_query.py --check --latest
+        run: python scripts/sync_query.py --check --latest --require-online
