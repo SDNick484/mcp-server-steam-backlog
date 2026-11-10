@@ -16,21 +16,22 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
       # The contract tests also run against a real backlog_server.py from steam-backlog-triage,
-      # pinned to its store-tags merge commit (PR #11; API 2). Bump it when the contract changes.
-      BACKLOG_REF: d9a041db3ea55501f3d8477b5c82a09eef5d59a5
+      # pinned to its main after PR #12 (CLAUDE.md and the pin). Bump it when the contract changes.
+      BACKLOG_REF: 4d0b53c3c11d88e6afb5b513572d32d78ca9f24c
       BACKLOG_REQUIRE_REAL: "1"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: ${{ matrix.python-version }}
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
       - run: pip install -e ".[dev]"
@@ -54,11 +55,39 @@ jobs:
           print("score vectors match backlog.html")
           PY
 
+  # No personal details in a public repo. Prints where and which rule, never the matched value.
+  privacy-scan:
+    name: Privacy scan (SteamIDs, IPs, emails, denylist)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Scan files and commits
+        env:
+          # Newline-separated terms (hostnames, domain, names, device names). Not available to pull requests from
+          # forks or to Dependabot; the scan then runs its pattern checks only and says so.
+          PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+          HAVE_DENYLIST: ${{ secrets.PRIVACY_DENYLIST != '' }}
+        run: |
+          flag=""
+          if [ "$HAVE_DENYLIST" = true ]; then
+            flag="--require-denylist"
+          else
+            echo "::warning::PRIVACY_DENYLIST is not available to this run; only the pattern checks ran"
+          fi
+          python .github/scripts/privacy_scan.py $flag
+
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - run: pip install . pip-audit
@@ -67,25 +96,28 @@ jobs:
   # The command-line install on Alpine (musl), in a stock container: deploy/alpine/smoke-test.sh.
   alpine:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker run --rm -v "$PWD:/src" -w /src python:3.12-alpine sh deploy/alpine/smoke-test.sh
 
   docker:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: docker build -f deploy/docker/Dockerfile -t mcp-server-steam-backlog .
       - run: docker run --rm --entrypoint mcp-server-steam-backlog mcp-server-steam-backlog --version
 
   # The files shared with the sibling servers (shared.lock lists which) must match mcp-server-shared.
   shared-drift:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       GITHUB_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
       - name: Shared files match the locked commit
@@ -93,3 +125,20 @@ jobs:
       - name: Shared files match mcp-server-shared main
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         run: python scripts/sync_shared.py --check --latest
+
+  # backlog_query.py is copied from steam-backlog-triage (query.lock records the commit); it must match.
+  query-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: backlog_query.py matches the locked commit
+        run: python scripts/sync_query.py --check --require-online
+      - name: backlog_query.py matches steam-backlog-triage main
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: python scripts/sync_query.py --check --latest --require-online

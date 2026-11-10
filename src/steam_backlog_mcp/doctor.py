@@ -21,6 +21,7 @@ import socket
 from dataclasses import asdict, dataclass, field
 from importlib.metadata import PackageNotFoundError, version
 
+from . import _build
 from .client import BacklogClient, BacklogError, export_age_days
 from .config import Settings
 from .logsafe import mask_url, redact
@@ -45,6 +46,7 @@ class Report:
     api: int | None = None
     features: dict[str, bool] = field(default_factory=dict)
     checks: list[Check] = field(default_factory=list)
+    build: str = ""  # the commit this install was built from, or "unknown"
 
     @property
     def ok(self) -> bool:
@@ -56,6 +58,8 @@ def versions() -> dict[str, str]:
     for pkg in ("mcp-server-steam-backlog", "mcp", "httpx"):
         try:
             out[pkg] = version(pkg)
+            if pkg == "mcp-server-steam-backlog":
+                out[pkg] += f" ({_build.commit()})"
         except PackageNotFoundError:
             out[pkg] = "not installed"
     return out
@@ -104,7 +108,7 @@ def _access_check(env: dict[str, str]) -> Check | None:
 
 async def run_doctor(settings: Settings, env: dict[str, str] | None = None) -> Report:
     e = dict(os.environ if env is None else env)
-    report = Report(versions(), settings.url, settings.dry_run)
+    report = Report(versions(), settings.url, settings.dry_run, build=_build.commit())
     report.checks.append(
         Check("config", True, f"BACKLOG_URL {settings.url}" + (", dry run" if settings.dry_run else ""))
     )

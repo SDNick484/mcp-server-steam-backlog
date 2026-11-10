@@ -8,11 +8,11 @@ import shutil
 import subprocess
 from dataclasses import replace
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 
-from steam_backlog_mcp import domain
+from steam_backlog_mcp import backlog_query, domain
 from steam_backlog_mcp.sim.fake_backlog import FIXTURE
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures" / "score_vectors.json").read_text(encoding="utf-8"))
@@ -36,6 +36,17 @@ def raw(**kw: Any) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- parity
+def test_typed_constants_match_backlog_query() -> None:
+    """domain's typed copies stay equal to the vendored module's; the rest is backlog_query itself."""
+    assert domain.LANES == backlog_query.LANES
+    assert domain.TIERS == backlog_query.TIERS
+    assert domain.DECK_NAME == backlog_query.DECK_NAME
+    assert domain.LEN_PRESET == backlog_query.LEN_PRESET
+    assert domain.TIER_RANK == backlog_query.TIER_RANK
+    assert domain.normalize is backlog_query.normalize
+    assert domain.Game is backlog_query.Game
+
+
 @pytest.mark.parametrize("v", VECTORS["vectors"], ids=lambda v: f"{v['id']:02d}")
 def test_score_matches_the_page(v: dict[str, Any]) -> None:
     g = domain.normalize(v["game"])
@@ -308,3 +319,116 @@ def test_tags_relax_before_genres() -> None:
     r = find(replace(f, controller=()))
     assert (r.exact, r.relaxed) == (False, ["tags"])
     assert "Portal 2" in names(r)
+
+
+def test_sample_library_has_publishers_empty_and_absent() -> None:
+    raw = {g["name"]: g for g in json.loads(FIXTURE.read_text(encoding="utf-8"))["games"] if g["name"] != "DOOM"}
+    assert raw["Hotline Miami"]["publishers"] == ["DEVOLVER DIGITAL"]
+    assert raw["ELDEN RING"]["publishers"] == ["FromSoftware Inc.", "Bandai Namco Entertainment"]
+    assert raw["Destiny 2"]["reviews"] == {"total": 570000, "pct": 78, "desc": "Mostly Positive"}
+    assert (raw["COCOON"]["publishers"], raw["COCOON"]["reviews"]) == ([], None)
+    assert (raw["Mystery Prototype"]["developers"], raw["Mystery Prototype"]["reviews"]) == ([], None)
+    assert "publishers" not in raw["Portal"] and "reviews" not in raw["Portal"]
+    assert sum(1 for g in raw.values() if g.get("publishers")) == 39
+
+
+# --------------------------------------------------------------------------- publisher, developer, review, mc max
+def test_publisher_and_developer_filters_match_by_name_key() -> None:
+    devolver = {"Inscryption", "GRIS", "Katana ZERO", "Hotline Miami"}
+    for spelling in ("Devolver Digital", "DEVOLVER DIGITAL™", "Devolver Digital, Inc.", "devolver digital inc"):
+        assert names(find(domain.Filters(publishers=domain.name_filter([spelling])))) == devolver
+    assert names(find(domain.Filters(developers=domain.name_filter(["Valve"])))) == {"Portal 2", "Half-Life: Alyx"}
+    with_unknown = names(find(domain.Filters(developers=domain.name_filter(["Valve"]), include_unknown=True)))
+    assert {"Portal", "COCOON", "Mystery Prototype"} <= with_unknown
+
+
+def test_a_name_that_normalizes_to_nothing_is_no_filter() -> None:
+    assert domain.name_filter(["™", "!!", "  "]) == ()
+    assert len(find(domain.Filters(publishers=domain.name_filter(["™"]))).games) == 49
+
+
+def test_review_levels_and_metacritic_max() -> None:
+    assert get_args(domain.ReviewLevel) == backlog_query.REVIEW_KEYS
+    assert names(find(domain.Filters(reviews=("mostly-positive",)))) == {"Destiny 2"}
+    capped = find(domain.Filters(metacritic_max=89)).games
+    assert capped and all(g.metacritic and g.metacritic <= 89 for g in capped)
+    assert len(find(domain.Filters(metacritic_max=89, include_unknown=True)).games) == len(capped) + 8
+
+
+def test_new_filters_relax_in_order() -> None:
+    f = domain.Filters(metacritic_min=1, metacritic_max=99, reviews=("positive",), year_from=2000,
+                       publishers=("x",), developers=("y",), tags=("z",))  # fmt: skip
+    assert f.active() == ["metacritic_min", "metacritic_max", "reviews", "year", "publishers", "developers", "tags"]
+    for name in f.active():
+        assert name not in f.without(name).active()
+    r = find(domain.Filters(deck=(1,), publishers=domain.name_filter(["Devolver Digital"])))
+    assert (r.exact, r.relaxed, names(r)) == (False, ["publishers"], {"Half-Life: Alyx", "Destiny 2"})
+
+
+def test_metacritic_min_above_max_relaxes_min_first() -> None:
+    r = find(domain.Filters(metacritic_min=95, metacritic_max=90))
+    assert (r.exact, r.relaxed) == (False, ["metacritic_min"]) and r.games
+
+
+def test_passes_applies_the_new_filters_directly() -> None:
+    gs = games()
+    hotline = by_name(gs, "Hotline Miami")
+    f = domain.Filters(publishers=domain.name_filter(["devolver digital inc"]), reviews=("overwhelmingly-positive",))
+    assert domain.passes(hotline, f, {}, {})
+    assert not domain.passes(hotline, replace(f, developers=domain.name_filter(["Valve"])), {}, {})
+    assert not domain.passes(hotline, replace(f, metacritic_max=10), {}, {})
+
+
+def test_stat_dimension_literal_matches_the_vendored_dimensions() -> None:
+    assert get_args(domain.StatDimension) == tuple(backlog_query._STAT_DIM)
+
+
+def test_to_query_maps_every_field() -> None:
+    f = domain.Filters(
+        query="hades",
+        genres=("Action",),
+        genre_match="all",
+        length="short",
+        length_measure="extra",
+        protondb=("gold",),
+        protondb_min="silver",
+        metacritic_min=60,
+        metacritic_max=90,
+        reviews=("very-positive",),
+        year_from=2015,
+        year_to=2020,
+        deck=(3,),
+        controller=("full",),
+        tags=("roguelike",),
+        publishers=("valve",),
+        developers=("supergiant games",),
+        play_state=("never",),
+        lane=("next",),
+        has_note=True,
+        include_unknown=True,
+    )
+    q = f.to_query(backlog_only=True)
+    lo, hi = backlog_query.LEN_PRESET["short"]
+    assert (q.view, q.query, q.genres, q.genre_match) == ("backlog", "hades", ("Action",), "all")
+    assert (q.hours_min, q.hours_max, q.length_measure, q.length_none) == (lo, hi, "extra", False)
+    assert (q.protondb, q.protondb_min, q.metacritic_min, q.metacritic_max) == (("gold",), "silver", 60, 90)
+    assert (q.reviews, q.year_from, q.year_to, q.deck) == (("very-positive",), 2015, 2020, (3,))
+    assert (q.controller, q.tags, q.publishers, q.developers) == (
+        ("full",),
+        ("roguelike",),
+        ("valve",),
+        ("supergiant games",),
+    )
+    assert (q.play_state, q.lane, q.has_note) == (("never",), ("next",), True)
+    for name in ("genres", "length", "protondb", "metacritic", "year", "controller", "publishers", "developers"):
+        assert getattr(q, f"{name}_unknown") is True, name
+    assert q.tags_unknown is True and q.reviews_unknown is True
+    assert f.to_query().view == "all"
+
+
+def test_to_query_length_none_and_explicit_hours() -> None:
+    none = domain.Filters(length="none").to_query()
+    assert none.length_none is True and (none.hours_min, none.hours_max) == (None, None)
+    explicit = domain.Filters(length="short", hours_min=3, hours_max=4).to_query()
+    assert (explicit.hours_min, explicit.hours_max) == (3, 4)
+    assert not any(getattr(domain.Filters().to_query(), n) for n in ("genres_unknown", "tags_unknown"))

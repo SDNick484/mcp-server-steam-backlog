@@ -8,7 +8,7 @@ SteamID and persona never appear: the client drops them when it parses the expor
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import BaseModel, Field
 
@@ -39,6 +39,12 @@ class GameRow(BaseModel):
     score: float
 
 
+class ReviewSummary(BaseModel):
+    desc: str | None
+    pct: float | None
+    total: int
+
+
 class GameDetail(GameRow):
     deck_playtime_hours: float
     last_played: str | None = Field(description="UTC date, or null if never")
@@ -46,6 +52,9 @@ class GameDetail(GameRow):
     protondb_reports: int | None
     genres: list[str]
     tags: list[str] = Field(description="Steam user tags, most voted first; [] = unknown (not fetched)")
+    publishers: list[str] = Field(description="[] = unknown")
+    developers: list[str] = Field(description="[] = unknown")
+    reviews: ReviewSummary | None = Field(description="null = unknown")
     year: int | None
     controller: Literal["full", "partial", "none"] | None = Field(description="null = unknown")
     note: str | None
@@ -118,6 +127,30 @@ class PicksOut(BaseModel):
     considered: int = Field(description="Backlog games that passed the filters")
     exact: bool
     relaxed: list[str]
+    detail: str
+
+
+class StatRow(BaseModel):
+    label: str
+    games: int
+    hours_played: float
+    never: int
+    tried: int
+    played: int
+
+
+class StatOther(StatRow):
+    values: int = Field(description="How many distinct values were folded into this row")
+
+
+class StatsOut(BaseModel):
+    dimension: domain.StatDimension
+    metric: domain.StatMetric
+    total: int = Field(description="Games that passed the filters")
+    known: int = Field(description="Of those, games with data for this dimension")
+    rows: list[StatRow]
+    other: StatOther | None = Field(description="Everything past the top 25 rows, folded together")
+    unknown: StatRow | None = Field(description="Games with no data for this dimension")
     detail: str
 
 
@@ -254,6 +287,11 @@ def game_detail(g: domain.Game, lane: str, note: str | None, next_position: int 
             "protondb_reports": int(g.proton.total) if g.proton else None,
             "genres": list(g.genres),
             "tags": list(g.tags),
+            "publishers": list(g.publishers),
+            "developers": list(g.developers),
+            "reviews": {"desc": g.reviews.desc, "pct": g.reviews.pct, "total": int(g.reviews.total)}
+            if g.reviews
+            else None,
             "year": _int(g.year),
             "controller": controller,
             "note": note,
@@ -267,7 +305,8 @@ def game_detail(g: domain.Game, lane: str, note: str | None, next_position: int 
 
 
 def candidates(r: domain.Resolved) -> Unresolved:
-    reason: Literal["ambiguous", "unknown_appid", "no_match"] = "no_match" if r.reason == "ok" else r.reason
+    # backlog_query's reason is a plain str, one of ok | ambiguous | unknown_appid | no_match.
+    reason = cast(Literal["ambiguous", "unknown_appid", "no_match"], "no_match" if r.reason == "ok" else r.reason)
     return Unresolved(
         query=r.query,
         reason=reason,

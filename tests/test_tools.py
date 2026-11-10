@@ -3,15 +3,16 @@ the wire-level fake. These are the rules from the design doc's sections 4 to 7."
 
 from __future__ import annotations
 
+import json
 import re
 import time
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 from mcp import Client
 
-from steam_backlog_mcp import server
-from steam_backlog_mcp.sim.fake_backlog import FakeBacklog
+from steam_backlog_mcp import domain, models, server
+from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 
 pytestmark = pytest.mark.anyio
 
@@ -20,6 +21,7 @@ ALL_TOOLS = {
     "backlog_find_games",
     "backlog_get_game",
     "backlog_suggest_picks",
+    "backlog_get_stats",
     "backlog_get_next_queue",
     "backlog_set_lane",
     "backlog_set_note",
@@ -452,3 +454,113 @@ async def test_prompts(fake: FakeBacklog) -> None:
         p = await c.get_prompt("pick_for_tonight", {"minutes": "180", "device": "pc"})
         text = p.messages[0].content.text  # type: ignore[union-attr]
         assert "don't filter by length" in text and "PC" in text
+
+
+# --------------------------------------------------------------------------- publisher, developer, review filters
+def old_export_library() -> dict[str, Any]:
+    """The sample library as an old export wrote it: no publishers, developers or reviews on any game."""
+    lib: dict[str, Any] = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    for g in lib["games"]:
+        for key in ("publishers", "developers", "reviews"):
+            g.pop(key, None)
+    return lib
+
+
+async def test_overview_coverage_includes_the_new_data_sources(fake: FakeBacklog) -> None:
+    o = await call("backlog_get_overview")
+    assert {"publishers", "developers", "reviews"} <= set(o["coverage"])
+
+
+async def test_find_games_by_publisher(fake: FakeBacklog) -> None:
+    r = await call("backlog_find_games", {"publishers": ["Devolver Digital"]})
+    assert r["exact"] and r["matches"] == 4
+
+
+async def test_picks_by_developer_and_review_level(fake: FakeBacklog) -> None:
+    # Portal 2 is played (640 min), so Half-Life: Alyx is the only Valve backlog game.
+    r = await call("backlog_suggest_picks", {"developers": ["Valve"], "reviews": ["overwhelmingly-positive"]})
+    assert r["exact"] is True
+    assert r["picks"] and {p["name"] for p in r["picks"]} <= {"Portal 2", "Half-Life: Alyx"}
+
+
+@pytest.mark.parametrize("args", [{"publishers": ["x"] * 11}, {"reviews": ["great"]}, {"metacritic_max": 101}])
+async def test_new_filter_arguments_are_bounded(fake: FakeBacklog, args: dict[str, Any]) -> None:
+    await call_error("backlog_find_games", args)
+
+
+async def test_get_game_reports_publishers_developers_and_reviews(fake: FakeBacklog) -> None:
+    g = (await call("backlog_get_game", {"game": "Hotline Miami"}))["game"]
+    assert g["publishers"] == ["DEVOLVER DIGITAL"] and g["developers"] == ["Dennaton Games"]
+    assert g["reviews"] == {"desc": "Overwhelmingly Positive", "pct": 96, "total": 80000}
+    p = (await call("backlog_get_game", {"game": "Portal"}))["game"]
+    assert p["publishers"] == [] and p["developers"] == [] and p["reviews"] is None
+
+
+async def test_old_export_without_the_new_data_relaxes_the_publisher_filter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with FakeBacklog(old_export_library()) as f:
+        monkeypatch.setenv("BACKLOG_URL", f.url)
+        r = await call("backlog_find_games", {"publishers": ["Valve"]})
+    assert r["exact"] is False and "publishers" in r["relaxed"]
+
+
+# --------------------------------------------------------------------------- backlog_get_stats
+async def test_stats_publisher_groups_spellings(fake: FakeBacklog) -> None:
+    s = await call("backlog_get_stats", {"dimension": "publisher"})
+    assert (s["total"], s["known"], s["unknown"]["games"]) == (49, 39, 10)
+    assert (s["rows"][0]["label"], s["rows"][0]["games"]) == ("Devolver Digital", 4)
+
+
+async def test_stats_folds_and_orders(fake: FakeBacklog) -> None:
+    years = await call("backlog_get_stats", {"dimension": "year"})
+    assert len(years["rows"]) == 25 and years["other"]["values"] == 6 and years["rows"][-1]["label"] == "2023"
+    genres = await call("backlog_get_stats", {"dimension": "genre"})
+    assert len(genres["rows"]) == 25 and genres["other"]["values"] == 1
+    rv = await call("backlog_get_stats", {"dimension": "reviews"})
+    assert [r["label"] for r in rv["rows"]] == ["Overwhelmingly Positive", "Very Positive", "Mostly Positive"]
+
+
+async def test_stats_follows_filters_and_handles_empty(fake: FakeBacklog) -> None:
+    b = await call("backlog_get_stats", {"dimension": "deck", "backlog_only": True, "deck": ["verified"]})
+    assert b["total"] == sum(r["games"] for r in b["rows"]) and b["unknown"] is None
+    e = await call("backlog_get_stats", {"dimension": "publisher", "query": "zzzz"})
+    assert (e["total"], e["rows"], e["other"], e["unknown"]) == (0, [], None, None) and e["detail"]
+
+
+async def test_stats_detail_counts_without_names(fake: FakeBacklog) -> None:
+    s = await call("backlog_get_stats", {"dimension": "publisher"})
+    assert s["detail"] == "49 games; 39 have publisher data." and s["metric"] == "games"
+
+
+async def test_stats_on_an_old_export_is_all_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    with FakeBacklog(old_export_library()) as f:
+        monkeypatch.setenv("BACKLOG_URL", f.url)
+        s = await call("backlog_get_stats", {"dimension": "publisher"})
+    assert s["known"] == 0 and s["unknown"]["games"] == s["total"]
+
+
+@pytest.mark.parametrize("args", [{"dimension": "bogus"}, {"dimension": "genre", "metric": "most"}])
+async def test_stats_rejects_unknown_dimension_and_metric(fake: FakeBacklog, args: dict[str, Any]) -> None:
+    await call_error("backlog_get_stats", args)
+
+
+MULTI_VALUED = {"genre", "publisher", "developer", "tags"}
+
+
+@pytest.mark.parametrize("metric", get_args(domain.StatMetric))
+@pytest.mark.parametrize("dimension", get_args(domain.StatDimension))
+async def test_stats_every_dimension_and_metric(fake: FakeBacklog, dimension: str, metric: str) -> None:
+    s = await call("backlog_get_stats", {"dimension": dimension, "metric": metric})
+    out = models.StatsOut.model_validate(s)
+    assert (out.dimension, out.metric) == (dimension, metric)
+    assert out.total > 0 and 0 <= out.known <= out.total
+    unknown_games = out.unknown.games if out.unknown else 0
+    shown = sum(r.games for r in out.rows) + (out.other.games if out.other else 0)
+    if dimension in MULTI_VALUED:
+        assert shown >= out.known
+    else:
+        assert out.known + unknown_games == out.total
+        assert shown == out.known
+    if dimension == "genre":
+        assert shown > out.total  # games with several genres count under each
