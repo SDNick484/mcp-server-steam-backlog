@@ -15,9 +15,18 @@ reasoning behind non-obvious changes instead of only making them.
   Unknown `BACKLOG_*`, `MQTT_*` and `DECK_*` names are kept in `Settings.extra` for phase 2 and doctor
 - `src/steam_backlog_mcp/client.py`: `BacklogClient` (httpx; ETag cache for the library; API 1 vs 2
   detection from `X-Backlog-Api`; conditional PUTs), `BacklogError` (a `ToolError`), `Conflict` (412)
-- `src/steam_backlog_mcp/domain.py`: the dashboard's rules as pure functions: `normalize`, `tag_key`, `play_state`,
-  `length_hours`, `len_bucket`, `score_breakdown`, `Filters`/`passes`, `find` (with relaxation), `picks`,
-  `next_queue`, `move`, `overview`, `resolve`. No I/O
+- `src/steam_backlog_mcp/backlog_query.py`: the dashboard's query layer, vendored verbatim from
+  steam-backlog-triage at the commit in `query.lock`. **Never edited here**: change it there, then
+  `python scripts/sync_query.py --update`. Excluded from ruff, mypy and coverage, because it's copied
+  verbatim and linted and tested in triage
+- `src/steam_backlog_mcp/domain.py`: the MCP's typed layer over `backlog_query.py`: its own `Filters`
+  (`to_query(*, backlog_only=False)` builds the vendored one), the relaxation names, `Literal` aliases, and
+  the pure helpers around them (`resolve`, `move`, `overview`, `next_queue`). No I/O
+- `scripts/sync_query.py`: syncs and checks `backlog_query.py` against `query.lock`
+- `src/steam_backlog_mcp/_build.py`: the build commit shown by `--version` and `doctor`, filled in by
+  `git archive` through `.gitattributes`
+- `.github/scripts/privacy_scan.py` and `tests/test_privacy_scan.py`: the public-repo scan, copied from
+  steam-backlog-triage `0003503` (also excluded from ruff)
 - `src/steam_backlog_mcp/models.py`: Pydantic output models (each tool's outputSchema) and builders
 - `src/steam_backlog_mcp/server.py`: registrations only, in `TOOL_GROUPS` (read, write, export, resources,
   prompts). `AppState` is built in `lifespan()`: once per process over HTTP, once per session in tests
@@ -42,9 +51,11 @@ reasoning behind non-obvious changes instead of only making them.
 ## Rules for changes
 
 - **The MCP never touches the backlog's files.** It's a client of `backlog_server.py`; one writer.
-- **The page is the reference.** `domain.py` mirrors `backlog.html`. A scoring or filter change starts in
-  steam-backlog-triage; regenerate `tests/fixtures/score_vectors.json` with `scripts/gen_score_vectors.mjs`
-  and copy it to both repos. CI fails if the page's `score()` no longer matches the vectors.
+- **The page is the reference.** The chain is `backlog.html` → `backlog_query.py` (steam-backlog-triage,
+  parity-tested there) → vendored here. A scoring or filter change starts in steam-backlog-triage;
+  regenerate `tests/fixtures/score_vectors.json` with `scripts/gen_score_vectors.mjs` and copy it to both
+  repos. CI fails if the page's `score()` no longer matches the vectors. `BACKLOG_REF` (CI) and `query.lock`
+  usually move together.
 - **Picks are ranked by score alone**, like the page (decision D9 in the contract). Never pin Up next first.
 - **Writes never guess**: every game argument goes through `domain.resolve`; anything but exactly one
   match returns `not_resolved` with candidates and writes nothing.
@@ -75,4 +86,5 @@ cache and joins the library by `appid`. Add it as a new group in `TOOL_GROUPS`, 
 pip install -e ".[dev]" && ruff check . && ruff format --check . && mypy && pytest --cov
 mcp-server-steam-backlog doctor [--json] | simulate [--api 1|2] | call <tool> k=v [--dry-run] | serve [--http]
 BACKLOG_CHECKOUT=../steam-backlog-triage pytest tests/test_contract.py -k real
+python scripts/sync_query.py --check [--offline]
 ```

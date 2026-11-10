@@ -40,9 +40,10 @@ MCP client ──stdio, or HTTPS through Cloudflare Access──▶ mcp-server-s
 | Tool | What it does |
 |---|---|
 | `backlog_get_overview` | Start here: library size, never/tried/played, Deck ratings, the backlog by Deck rating × length, lane counts, Up next length, export age, data coverage |
-| `backlog_find_games` | Search and filter with the dashboard's filters (genres, Steam tags spelled loosely, HLTB length, ProtonDB, Metacritic, year, Deck rating, controller, play state, lane, notes); sort and page; relaxes filters instead of answering "not found" |
+| `backlog_find_games` | Search and filter with the dashboard's filters (genres, Steam tags spelled loosely, publishers and developers, Steam review levels, HLTB length, ProtonDB, Metacritic min and max, year, Deck rating, controller, play state, lane, notes); sort and page; relaxes filters instead of answering "not found" |
 | `backlog_get_game` | Everything about one game, with its score breakdown and store link |
 | `backlog_suggest_picks` | Couch picks with the same filters, each with a score breakdown to explain it |
+| `backlog_get_stats` | Breakdowns of the library by dimension (genre, publisher, developer, review level, Deck rating, year and more) and metric, the same ones the dashboard's Ask uses |
 | `backlog_get_next_queue` | The Up next lane in order, with notes |
 | `backlog_set_lane` | Move 1–50 games to next, someday, skip, done, or out of every lane |
 | `backlog_set_note` | Write, replace or clear a game's note |
@@ -187,7 +188,7 @@ answers only requests that start on the same machine.
 npx @modelcontextprotocol/inspector mcp-server-steam-backlog
 ```
 
-- [ ] Ten tools listed, each with a title, annotations and an output schema
+- [ ] Eleven tools listed, each with a title, annotations and an output schema
 - [ ] `backlog_get_overview` returns the library size and export age
 - [ ] `backlog_suggest_picks` returns picks with `score_breakdown`
 - [ ] `backlog_set_lane` with `games=["DOOM"]` (or any duplicated name) returns `not_resolved` and changes nothing
@@ -209,6 +210,12 @@ ruff check . && ruff format --check . && mypy && pytest --cov
   `BACKLOG_CHECKOUT=<dir>` uses a local checkout. See `docs/handoff-pr-a.md`.
 - `tests/fixtures/score_vectors.json` comes from `node scripts/gen_score_vectors.mjs path/to/backlog.html`.
   CI regenerates it and fails if the page's `score()` changed.
+- `src/steam_backlog_mcp/backlog_query.py` is the dashboard's query layer, copied verbatim from
+  steam-backlog-triage at the commit in `query.lock`. Don't edit it here: change it there, then
+  `python scripts/sync_query.py --update`. `python scripts/sync_query.py --check` (CI runs it) fails on an
+  edited copy or a stale lock.
+- `mcp-server-steam-backlog --version` (and `doctor`) show the build commit for wheels built from
+  `git archive`, and `unknown` otherwise.
 - Files shared with the sibling MCP servers (`remote.py`, `logsafe.py`, `lookup.py`, `ratelimit.py`,
   `tools.py`, `tasks.py` and their tests) come from
   [mcp-server-shared](https://github.com/SDNick484/mcp-server-shared); change them there, then

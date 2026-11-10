@@ -111,7 +111,7 @@ parity rather than re-running triage's node tests. The existing score-vector job
 - the `Literal` aliases (`Lane`, `LaneOrNone`, `PlayState`, `LenBucket`, `Measure`, `DeckName`, `Controller`,
   `Tier`, `Sort`) plus new `ReviewLevel`, `StatDimension`, `StatMetric`;
 - `Filters`, in today's shape, gaining `metacritic_max`, `publishers`, `developers`, `reviews`; its `active()` and
-  `without()`; and `to_query(view)`, which builds a `backlog_query.Filters` (preset to hours, `length="none"` to
+  `without()`; and `to_query(*, backlog_only=False)`, which builds a `backlog_query.Filters` (preset to hours, `length="none"` to
   `length_none`, `include_unknown` to every `*_unknown` flag, publisher and developer names to `name_key` keys);
 - `tag_filter()`, new `name_filter()`, `move()`;
 - `passes`, `find` (today's relaxation loop and fuzzy step, over `backlog_query.selected`), `picks` (a call to
