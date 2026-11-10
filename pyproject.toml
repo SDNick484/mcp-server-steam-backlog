@@ -65,7 +65,11 @@ skip_covered = true
 line-length = 120
 src = ["src", "tests"]
 # Copied verbatim from steam-backlog-triage, linted and tested there.
-extend-exclude = ["src/steam_backlog_mcp/backlog_query.py"]
+extend-exclude = [
+    "src/steam_backlog_mcp/backlog_query.py",
+    ".github/scripts/privacy_scan.py",
+    "tests/test_privacy_scan.py",
+]
 
 [tool.ruff.lint]
 # pycodestyle, pyflakes, isort, pyupgrade, bugbear, simplify

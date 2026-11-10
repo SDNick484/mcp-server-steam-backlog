@@ -31,8 +31,9 @@ from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 ROOT = Path(__file__).resolve().parent.parent
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 BACKLOG_REPO = "https://github.com/SDNick484/steam-backlog-triage.git"
-# steam-backlog-triage's store-tags merge commit (PR #11; API 2). Bump it when the contract changes.
-DEFAULT_BACKLOG_REF = "d9a041db3ea55501f3d8477b5c82a09eef5d59a5"
+# steam-backlog-triage's main after PR #12 (CLAUDE.md and the pin); keep in step with BACKLOG_REF in
+# .github/workflows/ci.yml. Bump it when the contract changes.
+DEFAULT_BACKLOG_REF = "4d0b53c3c11d88e6afb5b513572d32d78ca9f24c"
 
 
 # Async tests use anyio's pytest plugin: the MCP SDK's in-process Client needs a fixture's setup
