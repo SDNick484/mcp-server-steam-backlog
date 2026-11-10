@@ -377,3 +377,7 @@ def test_passes_applies_the_new_filters_directly() -> None:
     assert domain.passes(hotline, f, {}, {})
     assert not domain.passes(hotline, replace(f, developers=domain.name_filter(["Valve"])), {}, {})
     assert not domain.passes(hotline, replace(f, metacritic_max=10), {}, {})
+
+
+def test_stat_dimension_literal_matches_the_vendored_dimensions() -> None:
+    assert get_args(domain.StatDimension) == tuple(backlog_query._STAT_DIM)

@@ -21,6 +21,7 @@ ALL_TOOLS = {
     "backlog_find_games",
     "backlog_get_game",
     "backlog_suggest_picks",
+    "backlog_get_stats",
     "backlog_get_next_queue",
     "backlog_set_lane",
     "backlog_set_note",
@@ -502,3 +503,43 @@ async def test_old_export_without_the_new_data_relaxes_the_publisher_filter(
         monkeypatch.setenv("BACKLOG_URL", f.url)
         r = await call("backlog_find_games", {"publishers": ["Valve"]})
     assert r["exact"] is False and "publishers" in r["relaxed"]
+
+
+# --------------------------------------------------------------------------- backlog_get_stats
+async def test_stats_publisher_groups_spellings(fake: FakeBacklog) -> None:
+    s = await call("backlog_get_stats", {"dimension": "publisher"})
+    assert (s["total"], s["known"], s["unknown"]["games"]) == (49, 39, 10)
+    assert (s["rows"][0]["label"], s["rows"][0]["games"]) == ("Devolver Digital", 4)
+
+
+async def test_stats_folds_and_orders(fake: FakeBacklog) -> None:
+    years = await call("backlog_get_stats", {"dimension": "year"})
+    assert len(years["rows"]) == 25 and years["other"]["values"] == 6 and years["rows"][-1]["label"] == "2023"
+    genres = await call("backlog_get_stats", {"dimension": "genre"})
+    assert len(genres["rows"]) == 25 and genres["other"]["values"] == 1
+    rv = await call("backlog_get_stats", {"dimension": "reviews"})
+    assert [r["label"] for r in rv["rows"]] == ["Overwhelmingly Positive", "Very Positive", "Mostly Positive"]
+
+
+async def test_stats_follows_filters_and_handles_empty(fake: FakeBacklog) -> None:
+    b = await call("backlog_get_stats", {"dimension": "deck", "backlog_only": True, "deck": ["verified"]})
+    assert b["total"] == sum(r["games"] for r in b["rows"]) and b["unknown"] is None
+    e = await call("backlog_get_stats", {"dimension": "publisher", "query": "zzzz"})
+    assert (e["total"], e["rows"], e["other"], e["unknown"]) == (0, [], None, None) and e["detail"]
+
+
+async def test_stats_detail_counts_without_names(fake: FakeBacklog) -> None:
+    s = await call("backlog_get_stats", {"dimension": "publisher"})
+    assert s["detail"] == "49 games; 39 have publisher data." and s["metric"] == "games"
+
+
+async def test_stats_on_an_old_export_is_all_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
+    with FakeBacklog(old_export_library()) as f:
+        monkeypatch.setenv("BACKLOG_URL", f.url)
+        s = await call("backlog_get_stats", {"dimension": "publisher"})
+    assert s["known"] == 0 and s["unknown"]["games"] == s["total"]
+
+
+@pytest.mark.parametrize("args", [{"dimension": "bogus"}, {"dimension": "genre", "metric": "most"}])
+async def test_stats_rejects_unknown_dimension_and_metric(fake: FakeBacklog, args: dict[str, Any]) -> None:
+    await call_error("backlog_get_stats", args)

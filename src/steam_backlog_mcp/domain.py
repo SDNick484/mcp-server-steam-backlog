@@ -133,6 +133,11 @@ ReviewLevel = Literal[
     "overwhelmingly-negative",
     "few",
 ]
+StatDimension = Literal[
+    "genre", "publisher", "developer", "tags", "deck", "protondb", "controller", "length", "lane",
+    "metacritic", "reviews", "year", "decade",
+]  # fmt: skip
+StatMetric = Literal["games", "hours", "never"]
 Sort = Literal["score", "short", "name", "recent", "most", "mc"]
 
 # Typed copies of backlog_query's constants, for the places that need the Literal.
@@ -342,6 +347,23 @@ def picks(
     Sorted by score alone, like the page: the Up next bonus usually, not always, puts those first.
     """
     return backlog_query.picks(games, f.to_query(), triage, notes, exclude_next=exclude_next)
+
+
+def stats(
+    games: Sequence[Game],
+    f: Filters,
+    triage: Mapping[int, str],
+    notes: Mapping[int, str],
+    *,
+    dimension: StatDimension,
+    metric: StatMetric = "games",
+    backlog_only: bool = False,
+) -> dict[str, Any]:
+    """Ask's get_stats: a breakdown of the games passing the filters, grouped by one dimension."""
+    snap = backlog_query.Snapshot(list(games), dict(triage), dict(notes))
+    return backlog_query.stats_out(
+        snap, f.to_query(), dimension=dimension, metric=metric, view="backlog" if backlog_only else "all"
+    )
 
 
 def move(ids: list[int], appid: int, position: int) -> list[int]:

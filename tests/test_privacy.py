@@ -53,6 +53,8 @@ CALLS: list[tuple[str, dict[str, Any]]] = [
     ("backlog_reorder_next", {"order": ["620"]}),
     ("backlog_start_export", {}),
     ("backlog_get_export_status", {}),
+    ("backlog_get_stats", {"dimension": "publisher"}),
+    ("backlog_get_stats", {"dimension": "tags", "backlog_only": True}),
 ]
 
 

@@ -130,6 +130,30 @@ class PicksOut(BaseModel):
     detail: str
 
 
+class StatRow(BaseModel):
+    label: str
+    games: int
+    hours_played: float
+    never: int
+    tried: int
+    played: int
+
+
+class StatOther(StatRow):
+    values: int = Field(description="How many distinct values were folded into this row")
+
+
+class StatsOut(BaseModel):
+    dimension: str
+    metric: str
+    total: int = Field(description="Games that passed the filters")
+    known: int = Field(description="Of those, games with data for this dimension")
+    rows: list[StatRow]
+    other: StatOther | None = Field(description="Everything past the top 25 rows, folded together")
+    unknown: StatRow | None = Field(description="Games with no data for this dimension")
+    detail: str
+
+
 class QueueEntry(GameRow):
     position: int
     note: str | None
