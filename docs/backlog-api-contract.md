@@ -657,9 +657,57 @@ keys. A game passes if **any** of its tag keys is in the filter. A game with no 
 matches unless "include unknown" is on for the tag filter (the MCP's single `include_unknown`).
 The MCP's `tags` argument takes at most 10 strings of up to 80 characters each.
 
-**Relaxation** (MCP only; the page doesn't relax): `tags` is dropped after `controller` and before
-`genres`. Tags are crowd-voted, finer-grained and noisier than store genres, so they are the weaker
+**Relaxation** (MCP only; the page doesn't relax): `tags` is dropped after `publishers` and `developers`
+(which follow `controller`) and before `genres`. Tags are crowd-voted, finer-grained and noisier than store genres, so they are the weaker
 constraint. The order matches steam-backlog-triage's `backlog_query.py`.
+
+### 6.8 Publishers, developers and reviews (not part of the score)
+
+Not in `SCORING.md`: none of these change the score. Additive: the export's `schema` stays 2 and
+`X-Backlog-Api` stays 2; no route changes.
+
+**Library fields.** Each export game MAY carry:
+
+- `"publishers"` and `"developers"`: lists of up to 10 names, as Steam spells them (e.g.
+  `["Valve"]`).
+- `"reviews"`: `{"total": <count>, "pct": <percent positive>, "desc": "<Steam's label>"}`.
+
+Absent or empty is unknown, never "no publisher" or "no reviews". Cleaning is the same as for tags
+(`normalizeExtras()`): names keep strings only, trimmed, blanks dropped, at most 10; anything that isn't a
+list becomes `[]`. Clients MUST accept games without the keys. The server serves the fields as the
+exporter wrote them.
+
+**Name key** (`name_key`, the page's `nameKey()`), used for every publisher and developer comparison:
+
+1. Drop the signs `™`, `®` and `©`.
+2. NFKC-normalize, lower-case, and strip anything that isn't a letter or digit from both ends.
+3. Split on whitespace. While more than one word is left and the last word, with its non-alphanumeric
+   characters removed, is one of `inc llc ltd co corp corporation gmbh sa ab limited`, remove it and
+   strip the new last word's ends again (dropping it if that leaves it empty).
+4. Join the words with single spaces.
+
+So `Valve Corporation` and `valve` share a key, `Ubisoft Entertainment, Inc.` is `ubisoft entertainment`,
+and `Inc` alone stays `inc`. A game's keys are its names mapped through the key, blanks dropped,
+deduplicated.
+
+**Filter.** Inputs are mapped through the same key; the filter holds keys. A game passes if **any** of
+its keys is in the filter. A game with no keys never matches unless "include unknown" is on (the MCP's
+single `include_unknown`).
+
+**Review levels.** The level is Steam's own label, matched exactly against `reviews.desc`:
+`overwhelmingly-positive`, `very-positive`, `positive`, `mostly-positive`, `mixed`, `mostly-negative`,
+`negative`, `very-negative`, `overwhelmingly-negative`. A `reviews` object whose label isn't one of
+these (including none) is `few` ("too few reviews"). A game without a `reviews` object has no level and
+is unknown. The filter takes any number of levels and passes a game at any of them.
+
+**Metacritic max.** `metacritic_max` keeps games scoring at most that; it works with `metacritic_min`, and a
+game without a score is unknown. The page's dropdown offers 59, 69, 79 and 89; the MCP takes any integer from
+0 to 100.
+
+**Relaxation** (MCP only): the MCP's steps are `metacritic_min`, then `metacritic_max`, then `reviews`, then
+`year` (the page and `backlog_query.py` call the first two one step, `metacritic`); `publishers` and
+`developers` are dropped after `controller` and before `tags`, publishers first. The order is
+steam-backlog-triage's `backlog_query.py`.
 
 ---
 

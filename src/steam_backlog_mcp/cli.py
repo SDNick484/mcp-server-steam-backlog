@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 
-from . import __version__, remote
+from . import __version__, _build, remote
 from .config import flag, load_settings
 from .logsafe import setup_logging
 
@@ -109,7 +109,7 @@ async def _cmd_call(tool: str, raw_args: list[str]) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="mcp-server-steam-backlog", description=(__doc__ or "").split("\n\n")[0])
-    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__} ({_build.commit()})")
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--debug", action="store_true", help="debug logging (BACKLOG_DEBUG=1)")
     common.add_argument(

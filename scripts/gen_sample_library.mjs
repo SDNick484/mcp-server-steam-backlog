@@ -5,7 +5,9 @@
 // (steam_backlog_export.py schema 2) with fixed timestamps, placeholder identity fields, a few
 // extra games for name-resolution tests, some controller and ProtonDB variety, and store tags: some games have
 // them (two spellings of Souls-like on purpose), some have [] (unknown), and the rest have no "tags" key at all,
-// like an export made before tags existed.
+// like an export made before tags existed. Publishers, developers and review summaries come from the page's SAMPLE_META
+// (games without an entry get [], [] and null, as the page's sampleGames() does); Mystery Prototype gets the same
+// empty values, and Portal and the DOOMs carry none of the three keys, like an export made before they existed.
 //   node scripts/gen_sample_library.mjs path/to/backlog.html [out.json]
 import { readFileSync, writeFileSync } from "node:fs";
 import vm from "node:vm";
@@ -20,19 +22,24 @@ const grab = (re) => {
 const ctx = {};
 vm.createContext(ctx);
 vm.runInContext(
-  grab(/const SAMPLE = \[[\s\S]*?\n\];/) + "\n" + grab(/const SAMPLE_PROTON = \{[\s\S]*?\};/) +
-    "\nthis.SAMPLE = SAMPLE; this.SAMPLE_PROTON = SAMPLE_PROTON;",
+  grab(/const SAMPLE = \[[\s\S]*?\n\];/) + "\n" + grab(/const SAMPLE_PROTON = \{[\s\S]*?\};/) + "\n" +
+    grab(/const SAMPLE_META = \{[\s\S]*?\};/) +
+    "\nthis.SAMPLE = SAMPLE; this.SAMPLE_PROTON = SAMPLE_PROTON; this.SAMPLE_META = SAMPLE_META;",
   ctx,
 );
 
 const NOW = 1793750400; // 2026-11-04T00:00:00Z, fixed so the file never changes
 const CONTROLLER = { 620: "full", 1145360: "full", 504230: "full", 553420: "full", 1086940: "partial", 1091500: "partial" };
+const META = ctx.SAMPLE_META;
 const games = ctx.SAMPLE.map(([appid, name, pt, dpt, days, deck, h, genres, mc, year]) => ({
   appid, name, playtime: pt, deckPlaytime: dpt,
   lastPlayed: days ? NOW - days * 86400 : 0,
   deck, hltb: h ? { main: h[0], extra: h[1], complete: h[2] } : null,
   genres, metacritic: mc, year, controller: CONTROLLER[appid] ?? null,
   proton: ctx.SAMPLE_PROTON[appid] ? { tier: ctx.SAMPLE_PROTON[appid][0], total: ctx.SAMPLE_PROTON[appid][1] } : null,
+  publishers: META[appid] ? META[appid][0].split(", ") : [],
+  developers: META[appid] ? META[appid][1].split(", ") : [],
+  reviews: META[appid] ? { total: META[appid][2], pct: META[appid][3], desc: META[appid][4] } : null,
 }));
 // Name-resolution cases: a prefix of another title, and two games with the same name.
 games.push(
@@ -44,7 +51,8 @@ games.push(
     genres: ["Shooter", "Action"], metacritic: 85, year: 2016, controller: "full", proton: { tier: "platinum", total: 2400 } },
   // No store details, no ProtonDB entry, no HLTB: everything unknown.
   { appid: 999990, name: "Mystery Prototype", playtime: 0, deckPlaytime: 0, lastPlayed: 0, deck: 0, hltb: null,
-    genres: [], metacritic: null, year: null, controller: null, proton: null },
+    genres: [], metacritic: null, year: null, controller: null, proton: null,
+    publishers: [], developers: [], reviews: null },
 );
 // Steam store tags, top ones in Steam's (vote) order.
 const TAGS = {

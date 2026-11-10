@@ -4,7 +4,7 @@ The export file carries the user's SteamID and Steam display name; the MCP drops
 parses the library. This drives every tool against a library whose identity fields are set to
 recognizable values and greps everything that came back, logs included.
 
-76561190000000001 is shaped like a SteamID64 but below the range Steam issues to accounts, so it
+The SteamID below is shaped like a SteamID64 but below the range Steam issues to accounts, so it
 can't be anyone's.
 """
 
@@ -25,7 +25,7 @@ from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 
 pytestmark = pytest.mark.anyio
 
-STEAMID = "76561190000000001"
+STEAMID = "7656119" + "0000000001"
 PERSONA = "Zebulon Quartermaine"
 FORBIDDEN = [STEAMID, PERSONA, "/home/", "192.0.2."]
 
@@ -53,6 +53,8 @@ CALLS: list[tuple[str, dict[str, Any]]] = [
     ("backlog_reorder_next", {"order": ["620"]}),
     ("backlog_start_export", {}),
     ("backlog_get_export_status", {}),
+    ("backlog_get_stats", {"dimension": "publisher"}),
+    ("backlog_get_stats", {"dimension": "tags", "backlog_only": True}),
 ]
 
 

@@ -32,8 +32,8 @@ jobs:
         python-version: ["3.11", "3.12", "3.13", "3.14"]
     env:
       # The contract tests also run against a real backlog_server.py from steam-backlog-triage,
-      # pinned to its store-tags merge commit (PR #11; API 2). Bump it when the contract changes.
-      BACKLOG_REF: d9a041db3ea55501f3d8477b5c82a09eef5d59a5
+      # pinned to its main after PR #12 (CLAUDE.md and the pin). Bump it when the contract changes.
+      BACKLOG_REF: 4d0b53c3c11d88e6afb5b513572d32d78ca9f24c
       BACKLOG_REQUIRE_REAL: "1"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -64,9 +64,36 @@ jobs:
           print("score vectors match backlog.html")
           PY
 
+  # No personal details in a public repo. Prints where and which rule, never the matched value.
+  privacy-scan:
+    name: Privacy scan (SteamIDs, IPs, emails, denylist)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Scan files and commits
+        env:
+          # Newline-separated terms (hostnames, domain, names, device names). Not available to pull requests from
+          # forks or to Dependabot; the scan then runs its pattern checks only and says so.
+          PRIVACY_DENYLIST: ${{ secrets.PRIVACY_DENYLIST }}
+          HAVE_DENYLIST: ${{ secrets.PRIVACY_DENYLIST != '' }}
+        run: |
+          flag=""
+          if [ "$HAVE_DENYLIST" = true ]; then
+            flag="--require-denylist"
+          else
+            echo "::warning::PRIVACY_DENYLIST is not available to this run; only the pattern checks ran"
+          fi
+          python .github/scripts/privacy_scan.py $flag
+
   audit:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
@@ -96,3 +123,20 @@ jobs:
   # repo's own scripts/sync_shared.py, so the check is the one this repo's lock pins.
   shared-drift:
     uses: SDNick484/mcp-server-shared/.github/workflows/shared-drift.yml@9449e9fc66db4c1594e018cdc92928002347cac9 # v0.1.0
+
+  # backlog_query.py is copied from steam-backlog-triage (query.lock records the commit); it must match.
+  query-drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.11"
+      - name: backlog_query.py matches the locked commit
+        run: python scripts/sync_query.py --check --require-online
+      - name: backlog_query.py matches steam-backlog-triage main
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: python scripts/sync_query.py --check --latest --require-online
