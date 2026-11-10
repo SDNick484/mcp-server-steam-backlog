@@ -144,8 +144,8 @@ class StatOther(StatRow):
 
 
 class StatsOut(BaseModel):
-    dimension: str
-    metric: str
+    dimension: domain.StatDimension
+    metric: domain.StatMetric
     total: int = Field(description="Games that passed the filters")
     known: int = Field(description="Of those, games with data for this dimension")
     rows: list[StatRow]

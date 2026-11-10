@@ -87,6 +87,8 @@ __all__ = [
     "Resolved",
     "ReviewLevel",
     "Sort",
+    "StatDimension",
+    "StatMetric",
     "Term",
     "Tier",
     "explain",
@@ -109,6 +111,7 @@ __all__ = [
     "score",
     "score_breakdown",
     "sort_games",
+    "stats",
     "tag_filter",
     "tag_key",
 ]

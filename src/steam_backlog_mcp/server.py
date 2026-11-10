@@ -416,7 +416,11 @@ def register_read_tools(server: MCPServer) -> None:
         dimension: Annotated[domain.StatDimension, Field(description="What to group the games by")],
         metric: Annotated[
             domain.StatMetric,
-            Field(description="Ranks genre, publisher, developer and tags rows: games, hours or never"),
+            Field(
+                description=(
+                    "Ranks genre, publisher, developer and tags rows: games, hours, or never (the share never launched)"
+                )
+            ),
         ] = "games",
         query: Query = None,
         genres: Genres = None,
@@ -455,7 +459,8 @@ def register_read_tools(server: MCPServer) -> None:
         - Unknown is its own row (games with no data for the dimension), never counted as zero.
         - metric ranks genre, publisher, developer and tags rows; the other dimensions keep their natural order.
         - The top 25 rows are shown and the rest fold into other.
-        - A row's label can be passed straight to backlog_find_games (for example publishers=[label]).
+        - For genre, publisher, developer and tags, a row's label can be passed straight to backlog_find_games as
+          genres, publishers, developers or tags (for example publishers=[label]).
         </important_notes>
         <example>backlog_get_stats(dimension="publisher", backlog_only=true)</example>
         """
@@ -480,14 +485,16 @@ def register_read_tools(server: MCPServer) -> None:
         """
         <use_case>
         Everything about one game: playtime and Deck playtime, last played, Steam Deck rating, ProtonDB tier
-        and report count, HowLongToBeat times, genres, Steam user tags, Metacritic, controller support, triage
+        and report count, HowLongToBeat times, genres, Steam user tags, publishers, developers, Steam user
+        reviews, Metacritic, controller support, triage
         lane, note, position in Up next, couch score with its breakdown, and the Steam store link.
         </use_case>
         <important_notes>
         - game is an app id or the exact name. If the name matches several games or none, found is false and
           unresolved lists candidates (reason ambiguous/no_match): pick one by app id or ask the user.
         - null fields are unknown, not zero. tags are Steam user tags in Steam's order (most voted first);
-          an empty list means the tags are unknown (not fetched), not that the game has none.
+          an empty list means the tags are unknown (not fetched), not that the game has none. The same holds
+          for publishers and developers ([] is unknown) and for reviews (null is unknown).
         </important_notes>
         <example>backlog_get_game(game="Hades")</example>
         """

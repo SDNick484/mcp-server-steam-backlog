@@ -657,8 +657,8 @@ keys. A game passes if **any** of its tag keys is in the filter. A game with no 
 matches unless "include unknown" is on for the tag filter (the MCP's single `include_unknown`).
 The MCP's `tags` argument takes at most 10 strings of up to 80 characters each.
 
-**Relaxation** (MCP only; the page doesn't relax): `tags` is dropped after `controller` and before
-`genres`. Tags are crowd-voted, finer-grained and noisier than store genres, so they are the weaker
+**Relaxation** (MCP only; the page doesn't relax): `tags` is dropped after `publishers` and `developers`
+(which follow `controller`) and before `genres`. Tags are crowd-voted, finer-grained and noisier than store genres, so they are the weaker
 constraint. The order matches steam-backlog-triage's `backlog_query.py`.
 
 ### 6.8 Publishers, developers and reviews (not part of the score)
@@ -700,11 +700,13 @@ single `include_unknown`).
 these (including none) is `few` ("too few reviews"). A game without a `reviews` object has no level and
 is unknown. The filter takes any number of levels and passes a game at any of them.
 
-**Metacritic max.** `metacritic_max` (59, 69, 79 or 89) keeps games scoring at most that; it works with
-`metacritic_min`, and a game without a score is unknown.
+**Metacritic max.** `metacritic_max` keeps games scoring at most that; it works with `metacritic_min`, and a
+game without a score is unknown. The page's dropdown offers 59, 69, 79 and 89; the MCP takes any integer from
+0 to 100.
 
-**Relaxation** (MCP only): `reviews` is dropped right after `metacritic` (and before `year`); `publishers`
-and `developers` are dropped after `controller` and before `tags`, publishers first. The order is
+**Relaxation** (MCP only): the MCP's steps are `metacritic_min`, then `metacritic_max`, then `reviews`, then
+`year` (the page and `backlog_query.py` call the first two one step, `metacritic`); `publishers` and
+`developers` are dropped after `controller` and before `tags`, publishers first. The order is
 steam-backlog-triage's `backlog_query.py`.
 
 ---
