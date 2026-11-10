@@ -176,6 +176,15 @@ class Scanner(unittest.TestCase):
         self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
         self.assertIn("full 40-character commit SHA", p.stderr)
 
+    def test_dependabots_sign_off_is_allowed(self):
+        bot = "support" + "@" + "github.com"
+        r = self.repo().add("a.txt", "fine\n").commit(f"Bump a thing\n\nSigned-off-by: dependabot[bot] <{bot}>")
+        p = r.scan()
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        other = "someone" + "@" + "github.com"
+        r.add("b.txt", "fine\n").commit(f"Thanks to {other}")
+        self.assertFlags(r.scan(), "email", "message:1", other)
+
     def test_binary_files_are_skipped(self):
         r = self.repo()
         (r.root / "img.bin").write_bytes(b"\0\1\2" + REAL_ID.encode())
