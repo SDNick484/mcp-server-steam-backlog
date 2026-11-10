@@ -150,6 +150,32 @@ class Scanner(unittest.TestCase):
             self.assertNotIn(s, p.stdout + p.stderr)
         self.assertEqual(r.scan("--no-history", denylist="unrelated").returncode, 0)
 
+    def test_an_allowed_commit_skips_its_identity_only(self):
+        who = f"{HOST} <SDNick484@users.noreply.github.com>"
+        r = self.repo().add("a.txt", "fine\n").commit("Listed", author=who)
+        listed = subprocess.run(["git", "-C", str(r.root), "rev-parse", "HEAD"], check=True, capture_output=True,
+                                text=True).stdout.strip()
+        r.add(".github/privacy-scan-allowed-commits", f"# pushed before the scan\n{listed}  old sync commit\n")
+        r.add("b.txt", "fine\n").commit("Not listed", author=who)
+        p = r.scan(denylist=HOST)
+        self.assertNotIn(f"commit {listed[:10]}", p.stdout)
+        self.assertIn("author:1: denylist entry #1", p.stdout)  # the unlisted commit, same author
+        self.assertEqual(p.stdout.count("author:1"), 1, p.stdout)
+        self.assertNotIn(HOST, p.stdout + p.stderr)
+
+        r.add("c.txt", "fine\n").commit(f"Message names {HOST}")
+        msg_sha = subprocess.run(["git", "-C", str(r.root), "rev-parse", "HEAD"], check=True, capture_output=True,
+                                 text=True).stdout.strip()
+        r.add(".github/privacy-scan-allowed-commits", f"{listed} old sync commit\n{msg_sha} listed, but\n")
+        p = r.scan(denylist=HOST)
+        self.assertIn(f"commit {msg_sha[:10]} message:1: denylist entry #1", p.stdout)  # messages are still scanned
+
+    def test_a_malformed_allowed_commits_line_is_a_setup_error(self):
+        r = self.repo().add(".github/privacy-scan-allowed-commits", "abc123 too short\n").commit()
+        p = r.scan()
+        self.assertEqual(p.returncode, 2, p.stdout + p.stderr)
+        self.assertIn("full 40-character commit SHA", p.stderr)
+
     def test_binary_files_are_skipped(self):
         r = self.repo()
         (r.root / "img.bin").write_bytes(b"\0\1\2" + REAL_ID.encode())
