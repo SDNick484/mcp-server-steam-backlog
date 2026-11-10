@@ -8,7 +8,7 @@ SteamID and persona never appear: the client drops them when it parses the expor
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, cast
 
 from pydantic import BaseModel, Field
 
@@ -267,7 +267,8 @@ def game_detail(g: domain.Game, lane: str, note: str | None, next_position: int 
 
 
 def candidates(r: domain.Resolved) -> Unresolved:
-    reason: Literal["ambiguous", "unknown_appid", "no_match"] = "no_match" if r.reason == "ok" else r.reason
+    # backlog_query's reason is a plain str, one of ok | ambiguous | unknown_appid | no_match.
+    reason = cast(Literal["ambiguous", "unknown_appid", "no_match"], "no_match" if r.reason == "ok" else r.reason)
     return Unresolved(
         query=r.query,
         reason=reason,

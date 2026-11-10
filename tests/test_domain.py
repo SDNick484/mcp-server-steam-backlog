@@ -12,7 +12,7 @@ from typing import Any
 
 import pytest
 
-from steam_backlog_mcp import domain
+from steam_backlog_mcp import backlog_query, domain
 from steam_backlog_mcp.sim.fake_backlog import FIXTURE
 
 VECTORS = json.loads((Path(__file__).parent / "fixtures" / "score_vectors.json").read_text(encoding="utf-8"))
@@ -36,6 +36,17 @@ def raw(**kw: Any) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- parity
+def test_typed_constants_match_backlog_query() -> None:
+    """domain's typed copies stay equal to the vendored module's; the rest is backlog_query itself."""
+    assert domain.LANES == backlog_query.LANES
+    assert domain.TIERS == backlog_query.TIERS
+    assert domain.DECK_NAME == backlog_query.DECK_NAME
+    assert domain.LEN_PRESET == backlog_query.LEN_PRESET
+    assert domain.TIER_RANK == backlog_query.TIER_RANK
+    assert domain.normalize is backlog_query.normalize
+    assert domain.Game is backlog_query.Game
+
+
 @pytest.mark.parametrize("v", VECTORS["vectors"], ids=lambda v: f"{v['id']:02d}")
 def test_score_matches_the_page(v: dict[str, Any]) -> None:
     g = domain.normalize(v["game"])
