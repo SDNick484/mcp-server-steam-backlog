@@ -381,3 +381,54 @@ def test_passes_applies_the_new_filters_directly() -> None:
 
 def test_stat_dimension_literal_matches_the_vendored_dimensions() -> None:
     assert get_args(domain.StatDimension) == tuple(backlog_query._STAT_DIM)
+
+
+def test_to_query_maps_every_field() -> None:
+    f = domain.Filters(
+        query="hades",
+        genres=("Action",),
+        genre_match="all",
+        length="short",
+        length_measure="extra",
+        protondb=("gold",),
+        protondb_min="silver",
+        metacritic_min=60,
+        metacritic_max=90,
+        reviews=("very-positive",),
+        year_from=2015,
+        year_to=2020,
+        deck=(3,),
+        controller=("full",),
+        tags=("roguelike",),
+        publishers=("valve",),
+        developers=("supergiant games",),
+        play_state=("never",),
+        lane=("next",),
+        has_note=True,
+        include_unknown=True,
+    )
+    q = f.to_query(backlog_only=True)
+    lo, hi = backlog_query.LEN_PRESET["short"]
+    assert (q.view, q.query, q.genres, q.genre_match) == ("backlog", "hades", ("Action",), "all")
+    assert (q.hours_min, q.hours_max, q.length_measure, q.length_none) == (lo, hi, "extra", False)
+    assert (q.protondb, q.protondb_min, q.metacritic_min, q.metacritic_max) == (("gold",), "silver", 60, 90)
+    assert (q.reviews, q.year_from, q.year_to, q.deck) == (("very-positive",), 2015, 2020, (3,))
+    assert (q.controller, q.tags, q.publishers, q.developers) == (
+        ("full",),
+        ("roguelike",),
+        ("valve",),
+        ("supergiant games",),
+    )
+    assert (q.play_state, q.lane, q.has_note) == (("never",), ("next",), True)
+    for name in ("genres", "length", "protondb", "metacritic", "year", "controller", "publishers", "developers"):
+        assert getattr(q, f"{name}_unknown") is True, name
+    assert q.tags_unknown is True and q.reviews_unknown is True
+    assert f.to_query().view == "all"
+
+
+def test_to_query_length_none_and_explicit_hours() -> None:
+    none = domain.Filters(length="none").to_query()
+    assert none.length_none is True and (none.hours_min, none.hours_max) == (None, None)
+    explicit = domain.Filters(length="short", hours_min=3, hours_max=4).to_query()
+    assert (explicit.hours_min, explicit.hours_max) == (3, 4)
+    assert not any(getattr(domain.Filters().to_query(), n) for n in ("genres_unknown", "tags_unknown"))

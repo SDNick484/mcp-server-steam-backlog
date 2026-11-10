@@ -6,12 +6,12 @@ from __future__ import annotations
 import json
 import re
 import time
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 from mcp import Client
 
-from steam_backlog_mcp import server
+from steam_backlog_mcp import domain, models, server
 from steam_backlog_mcp.sim.fake_backlog import FIXTURE, FakeBacklog
 
 pytestmark = pytest.mark.anyio
@@ -543,3 +543,24 @@ async def test_stats_on_an_old_export_is_all_unknown(monkeypatch: pytest.MonkeyP
 @pytest.mark.parametrize("args", [{"dimension": "bogus"}, {"dimension": "genre", "metric": "most"}])
 async def test_stats_rejects_unknown_dimension_and_metric(fake: FakeBacklog, args: dict[str, Any]) -> None:
     await call_error("backlog_get_stats", args)
+
+
+MULTI_VALUED = {"genre", "publisher", "developer", "tags"}
+
+
+@pytest.mark.parametrize("metric", get_args(domain.StatMetric))
+@pytest.mark.parametrize("dimension", get_args(domain.StatDimension))
+async def test_stats_every_dimension_and_metric(fake: FakeBacklog, dimension: str, metric: str) -> None:
+    s = await call("backlog_get_stats", {"dimension": dimension, "metric": metric})
+    out = models.StatsOut.model_validate(s)
+    assert (out.dimension, out.metric) == (dimension, metric)
+    assert out.total > 0 and 0 <= out.known <= out.total
+    unknown_games = out.unknown.games if out.unknown else 0
+    shown = sum(r.games for r in out.rows) + (out.other.games if out.other else 0)
+    if dimension in MULTI_VALUED:
+        assert shown >= out.known
+    else:
+        assert out.known + unknown_games == out.total
+        assert shown == out.known
+    if dimension == "genre":
+        assert shown > out.total  # games with several genres count under each
