@@ -1,0 +1,17 @@
+{
+  "battery": 62,
+  "charging": "OFF",
+  "plugged": "OFF",
+  "power_w": 9.4,
+  "time_left_min": 92,
+  "health": 96.0,
+  "docked": "OFF",
+  "apu_temp": 61.0,
+  "fan_rpm": 3200,
+  "mode": "Game Mode",
+  "playing": "ON",
+  "appid": 367520,
+  "game": "Hollow Knight",
+  "game_started": "2023-11-14T22:33:54+00:00",
+  "store_url": "https://store.steampowered.com/app/367520/"
+}
