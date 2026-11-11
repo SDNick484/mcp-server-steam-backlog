@@ -50,8 +50,11 @@ jobs:
       - run: pytest --cov
       - name: Score vectors still match backlog.html
         run: |
-          git clone --depth 1 --branch "$BACKLOG_REF" https://github.com/SDNick484/steam-backlog-triage.git /tmp/sbt \
-            || git clone https://github.com/SDNick484/steam-backlog-triage.git /tmp/sbt
+          # Fetch the pinned commit the way tests/conftest.py does. `git clone --branch` takes only a
+          # branch or tag, and a fallback to main would compare against an unpinned page.
+          git init -q /tmp/sbt
+          git -C /tmp/sbt fetch -q --depth 1 https://github.com/SDNick484/steam-backlog-triage.git "$BACKLOG_REF"
+          git -C /tmp/sbt checkout -q FETCH_HEAD
           node scripts/gen_score_vectors.mjs /tmp/sbt/backlog.html /tmp/vectors.json
           python - <<'PY'
           import json
