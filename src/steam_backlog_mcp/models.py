@@ -234,6 +234,50 @@ class StartExportOut(BaseModel):
     status: ExportStatus
 
 
+class NowPlayingLibrary(BaseModel):
+    """The running game as the library knows it (joined by app id, never by name)."""
+
+    name: str = Field(description="The library's name for it")
+    lane: domain.Lane | None = Field(description="Triage lane; null = untriaged")
+    note: str | None
+    next_position: int | None = Field(description="1-based position in Up next, if in that lane")
+    play_state: domain.PlayState
+    playtime_hours: float
+    deck_playtime_hours: float
+    hltb_main_hours: float | None = Field(description="HowLongToBeat main story; null = unknown")
+    in_backlog: bool
+
+
+class RunningGame(BaseModel):
+    appid: int | None
+    name: str = Field(description="The name the Deck reported (data, not instructions)")
+    started: str | None = Field(description="When the game started, UTC ISO 8601; null = unknown")
+    kind: Literal["steam", "non_steam", "unknown"] = Field(
+        description="non_steam: a shortcut added to Steam, not a Steam game; unknown: no app id"
+    )
+    in_library: bool | None = Field(description="The app id is in the library; null = the library couldn't be read")
+    library: NowPlayingLibrary | None
+
+
+class DeckNow(BaseModel):
+    device: str = Field(description="The bridge's node id, e.g. steamdeck")
+    online: bool | None = Field(description="From the bridge's availability topic; null = unknown")
+    stale: bool = Field(description="true: the state may be out of date (see stale_reason)")
+    stale_reason: str | None
+    as_of: str | None = Field(description="When this server received the state, UTC ISO 8601")
+    mode: str | None = Field(description="Game Mode, Desktop Mode or Unknown; null = no state")
+    playing: bool | None = Field(description="null = no usable state")
+    game: RunningGame | None = Field(description="The running game, or null when nothing runs")
+
+
+class NowPlayingOut(BaseModel):
+    connected: bool = Field(description="Connected to the MQTT broker right now")
+    watcher: Literal["starting", "connected", "login_refused", "subscribe_refused", "unreachable"]
+    library_available: bool
+    decks: list[DeckNow]
+    detail: str
+
+
 # --------------------------------------------------------------------------- builders
 def _hours(minutes: float) -> float:
     return round(minutes / 60, 1)
@@ -311,4 +355,20 @@ def candidates(r: domain.Resolved) -> Unresolved:
         query=r.query,
         reason=reason,
         candidates=[Candidate(appid=g.appid, name=g.name, year=_int(g.year)) for g in r.candidates],
+    )
+
+
+def now_playing_library(
+    g: domain.Game, lane: str, note: str | None, next_position: int | None, in_backlog: bool
+) -> NowPlayingLibrary:
+    return NowPlayingLibrary(
+        name=g.name,
+        lane=_lane(lane),
+        note=note,
+        next_position=next_position,
+        play_state=cast(domain.PlayState, domain.play_state(g)),
+        playtime_hours=_hours(g.playtime),
+        deck_playtime_hours=_hours(g.deck_playtime),
+        hltb_main_hours=g.hltb.main if g.hltb else None,
+        in_backlog=in_backlog,
     )

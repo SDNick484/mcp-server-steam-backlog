@@ -81,6 +81,11 @@ def test_the_password_is_a_registered_secret_and_never_in_repr() -> None:
     assert "correct-horse-42" not in redact_secrets("login failed for reader / correct-horse-42 at broker")
 
 
+def test_a_lan_broker_address_is_masked_in_logs() -> None:
+    s = config.load_settings({"MQTT_HOST": "192.0.2.7"}).mqtt
+    assert s is not None and deck.DeckWatcher(s).endpoint == "x.x.x.7:1883"
+
+
 # --------------------------------------------------------------------------- the cache (N1, N6)
 STATE = "deck-ha-bridge/steamdeck/state"
 AVAIL = "deck-ha-bridge/steamdeck/availability"

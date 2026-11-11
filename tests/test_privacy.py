@@ -89,3 +89,36 @@ async def test_export_lines_are_redacted_again(identified: FakeBacklog) -> None:
     """Belt and braces: even if a backlog server forgot §4.8, the MCP's own pass catches SteamIDs and IPs."""
     st = server._status({"state": "running", "lines": [f"{STEAMID}: 49 games", "HTTP 429 from 192.0.2.20"]})
     assert st.lines == ["7656119XXXXXXXXXX: 49 games", "HTTP 429 from x.x.x.20"]
+
+
+async def test_now_playing_leaks_nothing(
+    identified: FakeBacklog, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """N6: the new tool's output and logs, including a refused login, carry no identity, address or password."""
+    from .fake_mqtt import FakeBroker
+
+    password = "deck-reader-pw-0451"
+    caplog.set_level(logging.DEBUG)
+    out: list[str] = []
+    with FakeBroker(user="reader", password=password) as b:
+        state = {"mode": "Game Mode", "playing": "ON", "appid": 620, "game": "Portal 2",
+                 "game_started": "2026-01-01T20:00:00+00:00", "store_url": None}  # fmt: skip
+        b.publish("deck-ha-bridge/steamdeck/state", json.dumps(state))
+        b.publish("deck-ha-bridge/other/state", json.dumps({**state, "appid": 2147483650, "game": "Emulator"}))
+        b.publish("deck-ha-bridge/steamdeck/availability", "offline")
+        env = {"MQTT_HOST": "127.0.0.1", "MQTT_PORT": str(b.port), "MQTT_USER": "reader", "MQTT_PASSWORD": password}
+        for k, v in env.items():
+            monkeypatch.setenv(k, v)
+        for attempt in (password, "a-wrong-password-99"):
+            monkeypatch.setenv("MQTT_PASSWORD", attempt)
+            async with Client(server.mcp) as c:
+                r = await c.call_tool("backlog_now_playing", {})
+                out.append(json.dumps(r.structured_content) + " ".join(getattr(p, "text", "") for p in r.content))
+    assert '"game": {"appid": 620' in out[0].replace("\n", "")  # the join happened, so the library was read
+    fmt = RedactingFormatter("%(message)s")
+    logs = "\n".join(fmt.format(rec) for rec in caplog.records)
+    blob = "\n".join(out)
+    for needle in [*FORBIDDEN, password, "a-wrong-password-99"]:
+        assert needle not in blob, needle
+        assert needle not in logs, needle
+    assert not re.search(r"7656119\d{10}", blob + logs)
