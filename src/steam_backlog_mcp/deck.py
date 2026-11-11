@@ -200,17 +200,7 @@ class DeckWatcher:
 
     # ------------------------------------------------------------------ the connection
     def _client(self) -> aiomqtt.Client:
-        s = self.settings
-        return aiomqtt.Client(
-            s.host,
-            s.port,
-            username=s.user,
-            password=s.password,
-            identifier=f"mcp-steam-backlog-{secrets.token_hex(4)}",  # unique: doctor and `call` connect too
-            tls_context=ssl.create_default_context() if s.tls else None,
-            keepalive=60,
-            timeout=10,
-        )
+        return make_client(self.settings)
 
     async def _settle(self) -> None:
         await asyncio.sleep(SETTLE_S)
@@ -264,6 +254,20 @@ class DeckWatcher:
         except TimeoutError:
             return False
         return True
+
+
+def make_client(s: MqttSettings) -> aiomqtt.Client:
+    """One MQTT 3.1.1 connection with these settings; the watcher and doctor both use it."""
+    return aiomqtt.Client(
+        s.host,
+        s.port,
+        username=s.user,
+        password=s.password,
+        identifier=f"mcp-steam-backlog-{secrets.token_hex(4)}",  # unique: doctor and `call` connect too
+        tls_context=ssl.create_default_context() if s.tls else None,
+        keepalive=60,
+        timeout=10,
+    )
 
 
 def refused(codes: Any) -> bool:

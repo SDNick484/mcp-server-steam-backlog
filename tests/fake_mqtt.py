@@ -61,8 +61,9 @@ class FakeBroker:
     def __init__(self, *, user: str | None = None, password: str | None = None) -> None:
         self.user, self.password = user, password
         self.retained: dict[str, bytes] = {}
-        self.deny_subscribe: set[str] = set()  # topic filters answered with 0x80
+        self.deny_subscribe: set[str] = set()  # ACL patterns: a filter inside one gets 0x80
         self.read_only = True  # client PUBLISHes are acknowledged and dropped (a read-only ACL)
+        self.close_on_publish = False  # some brokers disconnect a client that publishes where it may not
         self.connects: list[dict[str, Any]] = []
         self.client_publishes: list[tuple[str, bytes, bool]] = []  # every PUBLISH a client sent
         self.port = 0
@@ -180,7 +181,7 @@ class FakeBroker:
                         n = struct.unpack("!H", rest[:2])[0]
                         flt, qos = rest[2 : 2 + n].decode(), rest[2 + n]
                         rest = rest[3 + n :]
-                        if flt in self.deny_subscribe:
+                        if any(topic_matches(d, flt) for d in self.deny_subscribe):
                             codes.append(0x80)
                         else:
                             codes.append(min(qos, 1))
@@ -201,6 +202,8 @@ class FakeBroker:
                         rest = rest[2:]
                     retain = bool(header & 1)
                     self.client_publishes.append((topic, rest, retain))
+                    if self.close_on_publish:
+                        return
                     if not self.read_only:
                         await self._route(topic, rest, retain)
                 elif kind == 12:  # PINGREQ

@@ -40,7 +40,7 @@ def _setup_logging(args: argparse.Namespace) -> None:
 async def _cmd_doctor(args: argparse.Namespace) -> int:
     from .doctor import render, run_doctor, to_json
 
-    report = await run_doctor(load_settings())
+    report = await run_doctor(load_settings(), probe_acl=args.probe_acl)
     redacted = not _unredacted(args)
     print(to_json(report, redacted) if args.json else render(report, redacted))
     return 0 if report.ok else 1
@@ -124,6 +124,11 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ("doctor", "check"):
         doc = sub.add_parser(name, parents=[common], help="check everything between here and the backlog server")
         doc.add_argument("--json", action="store_true", help="the full report as JSON")
+        doc.add_argument(
+            "--probe-acl",
+            action="store_true",
+            help="now playing: publish one empty test message to see whether the MQTT login can publish (it shouldn't)",
+        )
     sim = sub.add_parser("simulate", parents=[common], help="run a fake backlog server with a sample library")
     sim.add_argument("--port", type=int, default=0, help="port (default: any free one)")
     sim.add_argument("--api", type=int, choices=(1, 2), default=2, help="API version to imitate (1 = before PR A)")
