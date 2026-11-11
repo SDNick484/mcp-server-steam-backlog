@@ -116,6 +116,8 @@ async def run_doctor(settings: Settings, env: dict[str, str] | None = None) -> R
         report.checks.append(
             Check("config", True, "other settings present: " + ", ".join(sorted(settings.extra)), warn=True)
         )
+    for problem in settings.mqtt_problems:
+        report.checks.append(Check("mqtt", True, problem, warn=True))
     client = BacklogClient(settings)
     try:
         try:
