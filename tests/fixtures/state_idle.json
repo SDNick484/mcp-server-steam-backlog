@@ -1,0 +1,17 @@
+{
+  "battery": 88,
+  "charging": "ON",
+  "plugged": "ON",
+  "power_w": 22.0,
+  "time_left_min": null,
+  "health": 95.0,
+  "docked": "ON",
+  "apu_temp": null,
+  "fan_rpm": null,
+  "mode": "Desktop Mode",
+  "playing": "OFF",
+  "appid": null,
+  "game": "Idle",
+  "game_started": null,
+  "store_url": null
+}

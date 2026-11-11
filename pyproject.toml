@@ -24,6 +24,7 @@ dependencies = [
     "pyjwt[crypto]>=2.10,<3",  # verifying Cloudflare Access assertions (remote.py)
     "uvicorn>=0.31,<1",        # the HTTP transport (remote.py)
     "typing_extensions>=4.7",
+    "aiomqtt>=2.3,<3",         # now playing: the Steam Deck bridge's retained MQTT state (deck.py)
 ]
 
 [project.urls]

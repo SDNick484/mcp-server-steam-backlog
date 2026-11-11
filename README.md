@@ -5,7 +5,8 @@ An [MCP](https://modelcontextprotocol.io) server for
 for working through a Steam backlog with an eye on the Steam Deck. It lets an MCP client such as
 Claude answer "what should I play tonight on the Deck, under 10 hours?" in one call, search and
 filter the library with the dashboard's filters, and triage games into lanes, add notes, reorder
-Up next and refresh the library, all saved to the same dashboard.
+Up next and refresh the library, all saved to the same dashboard. Optionally, it also knows what
+your Steam Deck is running right now (see [Now playing on the Steam Deck](#now-playing-on-the-steam-deck)).
 
 > **Status: alpha.** Tested against a wire-level fake of the backlog server, against
 > steam-backlog-triage's real `backlog_server.py` (both today's version and a prototype of the
@@ -50,6 +51,7 @@ MCP client ──stdio, or HTTPS through Cloudflare Access──▶ mcp-server-s
 | `backlog_reorder_next` | Move a game within Up next, or set the order |
 | `backlog_start_export` | Refresh the library (runs on the backlog server; minutes to an hour) |
 | `backlog_get_export_status` | How the refresh is going, with redacted log lines |
+| `backlog_now_playing` | Only with `MQTT_HOST` set: what each Steam Deck is running, joined to the library by app id (lane, note, Up next position, playtime, HLTB main) |
 
 Resources: `backlog://scoring` (how the score works) and `backlog://game/{appid}`.
 Prompts: `triage_session` (walk untriaged games one at a time) and `pick_for_tonight`.
@@ -75,6 +77,41 @@ Not exposed, on purpose: replacing the library, deleting data, anything touching
   from every log line even with `--no-redact`. Errors to the client are generic and actionable;
   details go to the log.
 - **Dry run.** `BACKLOG_DRY_RUN=1` (or `--dry-run`): writes validate and report, and send nothing.
+
+## Now playing on the Steam Deck
+
+Optional. With [steam-deck-ha-bridge](https://github.com/SDNick484/steam-deck-ha-bridge) on the Deck,
+the server can subscribe to the Deck's state on your MQTT broker and add one read-only tool,
+`backlog_now_playing`: "what am I playing?", answered with the game's lane, note, Up next position,
+playtime and length from the library, so Claude can offer to move it to next or done.
+
+```
+steam-deck-ha-bridge ──publish, retained──▶ MQTT broker ──subscribe, read-only──▶ mcp-server-steam-backlog
+  deck-ha-bridge/<node>/state          (JSON, docs/state-schema.md in the bridge's repo)
+  deck-ha-bridge/<node>/availability   (online / offline)
+```
+
+- **Off unless `MQTT_HOST` is set.** Without it there's no MQTT connection and the tool isn't listed.
+- **Never publishes**, not even a last will. Give its login read access to the bridge's topics and
+  nothing else. With Mosquitto's ACL file, for example:
+
+  ```
+  user mcp-steam-backlog
+  topic read deck-ha-bridge/#
+  ```
+
+  `mcp-server-steam-backlog doctor --probe-acl` checks it: it publishes one empty, non-retained message
+  under `deck-ha-bridge/acl-probe/` and warns if the broker lets it through. (An MQTT 3.1.1 broker can't
+  tell a client its publish was refused, so the probe subscribes to its own topic and watches for the
+  message to come back.) Some brokers grant every login full access whatever their ACL says; the probe
+  is how you find out.
+- **By app id, never by name.** Non-Steam shortcuts (app ids of 2^31 and up) and Steam games that aren't
+  in the library are reported as such.
+- **Stale is flagged.** A Deck that went offline, a lost broker connection, or a malformed message
+  comes back with `stale: true` and a reason, instead of being presented as live.
+- Retained messages arrive right after subscribing, so the first call after a start waits up to three
+  seconds for them. The connection retries with backoff from 1 to 60 seconds.
+- `doctor` checks the login, the subscription and that a retained state arrives within 5 seconds.
 
 ## API versions
 
@@ -181,6 +218,11 @@ answers only requests that start on the same machine.
 | `BACKLOG_LOG_UNREDACTED` | off | Show LAN addresses in logs (secrets and SteamIDs stay hidden) |
 | `MCP_HTTP_BIND`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH` | `127.0.0.1`, `8486`, `/mcp/backlog` | The HTTP service |
 | `MCP_PUBLIC_HOSTS`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `MCP_ALLOWED_EMAILS` | | Cloudflare Access |
+| `MQTT_HOST` | unset (now playing off) | The MQTT broker the Deck bridge publishes to |
+| `MQTT_PORT` | `1883`, or `8883` with TLS | |
+| `MQTT_USER`, `MQTT_PASSWORD` | | A read-only login; the password is redacted from every log line |
+| `MQTT_TLS` | off | TLS with the system's CA certificates |
+| `DECK_STATE_TOPIC` | `deck-ha-bridge/+/state` | The bridge's state topic; availability is the same with `availability` |
 
 ## Checking it with the MCP Inspector
 
@@ -197,6 +239,7 @@ npx @modelcontextprotocol/inspector mcp-server-steam-backlog
 - [ ] With `BACKLOG_DRY_RUN=1`, writes return `dry_run` and the dashboard doesn't change
 - [ ] `backlog://scoring` reads; `backlog://game/620` reads for a game in the library
 - [ ] Prompts `triage_session` and `pick_for_tonight` render
+- [ ] With `MQTT_HOST` set: a twelfth tool, `backlog_now_playing`, answers with the Deck's state; without it, it isn't listed
 
 ## Development
 
@@ -208,6 +251,9 @@ ruff check . && ruff format --check . && mypy && pytest --cov
 - The contract tests run against a fake, against the fake imitating API 1, and against a real
   `backlog_server.py`: `BACKLOG_REF=<ref>` clones steam-backlog-triage at that ref (default: steam-backlog-triage main after its CLAUDE.md and pin PR, `4d0b53c`, set in `tests/conftest.py`),
   `BACKLOG_CHECKOUT=<dir>` uses a local checkout. See `docs/handoff-pr-a.md`.
+- `tests/fixtures/state_playing.json` and `state_idle.json` are copied from steam-deck-ha-bridge's
+  `tests/fixtures` (its code produces them). `tests/fake_mqtt.py` is a small MQTT 3.1.1 broker for the
+  now-playing and doctor tests.
 - `tests/fixtures/score_vectors.json` comes from `node scripts/gen_score_vectors.mjs path/to/backlog.html`.
   CI regenerates it and fails if the page's `score()` changed.
 - `src/steam_backlog_mcp/backlog_query.py` is the dashboard's query layer, copied verbatim from
