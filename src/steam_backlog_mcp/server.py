@@ -19,6 +19,8 @@ Safety shape:
     exports, and confirmation before moving more than five games or replacing a note.
   - **Reversible**: every write returns what it replaced.
   - **Dry run** (BACKLOG_DRY_RUN=1): writes validate and report, and send nothing.
+  - **Tiered** (``@tier`` under each ``@server.tool``): reads are ``read``, writes and the export are
+    ``everyday`` (each returns what it replaced, so none is a chore to undo); none is ``costly``.
 """
 
 from __future__ import annotations
@@ -42,6 +44,7 @@ from .client import BacklogClient, BacklogError, Conflict, Library, export_age_d
 from .config import Settings, load_settings
 from .logsafe import redact
 from .ratelimit import TokenBucket, refusal
+from .remote import request_state_security, tier
 from .tasks import spawn_task, stop_task
 from .tools import ACT_IDEMPOTENT, READ_ONLY
 
@@ -129,7 +132,12 @@ async def lifespan(server: MCPServer) -> AsyncIterator[None]:
         _state = None
 
 
-mcp = MCPServer("steam-backlog", instructions=INSTRUCTIONS, lifespan=lifespan)
+mcp = MCPServer(
+    "steam-backlog",
+    instructions=INSTRUCTIONS,
+    lifespan=lifespan,
+    request_state_security=request_state_security(),  # what @tier's confirmation prompt needs; no tool here asks
+)
 
 
 # --------------------------------------------------------------------------- shared helpers
@@ -313,6 +321,7 @@ Unknown = Annotated[
 # =========================================================================== read tools
 def register_read_tools(server: MCPServer) -> None:
     @server.tool(title="Backlog overview", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_get_overview() -> m.Overview:
         """
         <use_case>
@@ -356,6 +365,7 @@ def register_read_tools(server: MCPServer) -> None:
         )
 
     @server.tool(title="Find games", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_find_games(
         query: Query = None,
         genres: Genres = None,
@@ -431,6 +441,7 @@ def register_read_tools(server: MCPServer) -> None:
         )
 
     @server.tool(title="Library statistics", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_get_stats(
         dimension: Annotated[domain.StatDimension, Field(description="What to group the games by")],
         metric: Annotated[
@@ -500,6 +511,7 @@ def register_read_tools(server: MCPServer) -> None:
         return m.StatsOut.model_validate({**res, "metric": metric, "detail": detail})
 
     @server.tool(title="Get one game", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_get_game(game: GameRef) -> m.GameLookup:
         """
         <use_case>
@@ -524,6 +536,7 @@ def register_read_tools(server: MCPServer) -> None:
         return m.GameLookup(found=True, game=_detail(r.game, v), unresolved=None)
 
     @server.tool(title="Suggest couch picks", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_suggest_picks(
         count: Annotated[int, Field(ge=1, le=20)] = 6,
         exclude_next: Annotated[
@@ -614,6 +627,7 @@ def register_read_tools(server: MCPServer) -> None:
         return m.PicksOut(picks=out, considered=len(pool), exact=exact, relaxed=relaxed, detail=detail)
 
     @server.tool(title="Up next queue", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_get_next_queue() -> m.NextQueueOut:
         """
         <use_case>
@@ -649,6 +663,7 @@ def _detail(g: domain.Game, v: View) -> m.GameDetail:
 # =========================================================================== write tools
 def register_write_tools(server: MCPServer) -> None:
     @server.tool(title="Set triage lane", annotations=ACT_IDEMPOTENT)
+    @tier("everyday")
     async def backlog_set_lane(
         games: Annotated[
             list[GameRef],
@@ -736,6 +751,7 @@ def register_write_tools(server: MCPServer) -> None:
         )  # fmt: skip
 
     @server.tool(title="Set a note", annotations=ACT_IDEMPOTENT)
+    @tier("everyday")
     async def backlog_set_note(
         game: GameRef,
         note: Annotated[
@@ -802,6 +818,7 @@ def register_write_tools(server: MCPServer) -> None:
         )
 
     @server.tool(title="Reorder Up next", annotations=ACT_IDEMPOTENT)
+    @tier("everyday")
     async def backlog_reorder_next(
         game: Annotated[GameRef | None, Field(default=None, description="Move this one game...")] = None,
         position: Annotated[
@@ -966,6 +983,7 @@ def _status(raw: dict[str, Any] | None) -> m.ExportStatus:
 
 def register_export_tools(server: MCPServer) -> None:
     @server.tool(title="Refresh the library", annotations=EXPORT_ANNOTATIONS)
+    @tier("everyday")
     async def backlog_start_export() -> m.StartExportOut:
         """
         <use_case>
@@ -1011,6 +1029,7 @@ def register_export_tools(server: MCPServer) -> None:
         )
 
     @server.tool(title="Export status", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_get_export_status() -> m.ExportStatus:
         """
         <use_case>
@@ -1186,6 +1205,7 @@ def _deck_now(d: deck.DeckView, v: View | None, connected: bool) -> m.DeckNow:
 
 def register_now_playing(server: MCPServer) -> None:
     @server.tool(title="Now playing on the Steam Deck", annotations=READ_ONLY)
+    @tier("read")
     async def backlog_now_playing() -> m.NowPlayingOut:
         """
         <use_case>

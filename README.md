@@ -58,6 +58,14 @@ Prompts: `triage_session` (walk untriaged games one at a time) and `pick_for_ton
 
 Not exposed, on purpose: replacing the library, deleting data, anything touching keys or settings.
 
+**Authorization tiers.** Every tool has a tier that says who may call it: `read` for the eight tools that change
+nothing (the overview, find, get, picks, stats, queue and export status, plus now playing), and `everyday` for
+`backlog_set_lane`, `backlog_set_note`, `backlog_reorder_next` and `backlog_start_export`. None is costly; no tool
+asks for confirmation (each write returns what it replaced, so a mistake is one call to undo; the
+`confirmed=true` rule below is the tool's own, answered through the model). A person signed in through Access
+may call everything. An automated caller (an Access service token) may call only the tiers in `MCP_AUTOMATION_TIERS`: by default `read` and `power-off`, which
+here means the reads. See [Remote access](#remote-access-http-behind-cloudflare-access) for the settings.
+
 ## Safety design
 
 - **Writes never guess.** A game argument is an app id or an exact name. A name that matches several
@@ -199,6 +207,15 @@ answers only requests that start on the same machine.
    CF_ACCESS_AUD=<the Access application's AUD tag>
    ```
    then `rc-service mcp-server-steam-backlog restart` and `mcp-server-steam-backlog doctor`.
+
+   A Cloudflare Access **service token** (an automated caller, not a person) is refused with a 403 unless its
+   client ID is listed in `MCP_ALLOWED_SERVICE_TOKENS`, even with no `MCP_ALLOWED_EMAILS`. A listed token may
+   call only the tiers in `MCP_AUTOMATION_TIERS` (default `read,power-off`; add `everyday` to let it change
+   lanes and notes; `costly` is refused at startup):
+   ```sh
+   MCP_ALLOWED_SERVICE_TOKENS=token-1.access
+   MCP_AUTOMATION_TIERS=read
+   ```
 5. Check that an unauthenticated request gets Access's **401** (with `WWW-Authenticate`), not a 302
    to a login page:
    ```sh
@@ -218,6 +235,8 @@ answers only requests that start on the same machine.
 | `BACKLOG_LOG_UNREDACTED` | off | Show LAN addresses in logs (secrets and SteamIDs stay hidden) |
 | `MCP_HTTP_BIND`, `MCP_HTTP_PORT`, `MCP_HTTP_PATH` | `127.0.0.1`, `8486`, `/mcp/backlog` | The HTTP service |
 | `MCP_PUBLIC_HOSTS`, `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD`, `MCP_ALLOWED_EMAILS` | | Cloudflare Access |
+| `MCP_ALLOWED_SERVICE_TOKENS` | unset (no service token admitted) | Comma-separated Access service-token client IDs allowed in as automated callers |
+| `MCP_AUTOMATION_TIERS` | `read,power-off` | The tiers those callers may use; `everyday` may be added, `costly` refuses startup |
 | `MQTT_HOST` | unset (now playing off) | The MQTT broker the Deck bridge publishes to |
 | `MQTT_PORT` | `1883`, or `8883` with TLS | |
 | `MQTT_USER`, `MQTT_PASSWORD` | | A read-only login; the password is redacted from every log line |
