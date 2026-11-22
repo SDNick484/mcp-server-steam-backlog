@@ -222,6 +222,13 @@ answers only requests that start on the same machine.
    curl -si -X POST https://backlog.example.com/mcp/backlog | head -5
    ```
    If it redirects, give the MCP its own hostname instead.
+
+   `GET /healthz` and `GET /mcp/backlog/healthz` (the one the tunnel reaches) answer without Access, with
+   the commit the installer stamped (`"commit"`, `"repo"`; from `/opt/mcp-server-steam-backlog/COMMIT`):
+   ```sh
+   curl -s http://127.0.0.1:8486/healthz                 # {"status": "ok", "commit": ...}
+   curl -s https://backlog.example.com/mcp/backlog/healthz   # the same, through the tunnel
+   ```
 6. Add `https://backlog.example.com/mcp/backlog` as a custom connector in Claude.
 
 ## Settings

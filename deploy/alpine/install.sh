@@ -11,12 +11,15 @@
 #
 #   /opt/mcp-server-steam-backlog/venv       the code                          root:root                0755
 #   /opt/mcp-server-steam-backlog/run.sh     loads the settings, runs the CLI  root:root                0755
+#   /opt/mcp-server-steam-backlog/COMMIT     the installed commit, if any      root:root                0644
 #   /usr/local/bin/mcp-server-steam-backlog  runs run.sh as mcp-steam-backlog  root:root                0755
 #   /etc/mcp-server-steam-backlog/env        every setting                     root:mcp-steam-backlog  0640
 #   /var/lib/mcp-server-steam-backlog/       the user's home and working dir   mcp-steam-backlog       0700
 #   /var/log/mcp-server-steam-backlog/       the service's server.log          mcp-steam-backlog       0750
 #   /etc/init.d/mcp-server-steam-backlog     the OpenRC script                 root:root                0755
 # Re-running upgrades the code and keeps the settings.
+# COMMIT (the SHA installed, and this repo) is what /healthz and /mcp/backlog/healthz report; the
+# default SOURCE is pinned to main's current commit first, so the stamp names what pip installed.
 set -eu
 
 SRC="${1:-git+https://github.com/SDNick484/mcp-server-steam-backlog}"
@@ -38,12 +41,21 @@ if ! id "$USER_NAME" >/dev/null 2>&1; then
 	adduser -S -D -H -h "$STATE" -s /sbin/nologin -G "$USER_NAME" "$USER_NAME"
 fi
 
+# Which commit SOURCE is, worked out before pip (commit.sh, shared with the sibling servers)
+. "$HERE/commit.sh"
+REPO=SDNick484/mcp-server-steam-backlog
+pinned=$(commit_source "$SRC" "$REPO")
+SRC=$(printf '%s\n' "$pinned" | sed -n 1p)
+COMMIT=$(printf '%s\n' "$pinned" | sed -n 2p)
+
 python3 -m venv "$PREFIX/venv"
 "$PREFIX/venv/bin/pip" install --quiet --upgrade pip
 "$PREFIX/venv/bin/pip" install --quiet --upgrade "$SRC"
 # Every commit carries the same version number, so pip would call an installed copy "already
 # satisfied" and keep it. Reinstall the package itself (not its dependencies) from SOURCE.
 "$PREFIX/venv/bin/pip" install --quiet --force-reinstall --no-deps "$SRC"
+# Only now that pip succeeded (set -e stops before this otherwise), so COMMIT never names code that isn't installed
+write_commit "$PREFIX" "$COMMIT" "$REPO"
 install -m 0755 "$HERE/run.sh" "$PREFIX/run.sh"
 install -m 0755 "$HERE/mcp-server-steam-backlog" /usr/local/bin/mcp-server-steam-backlog
 
