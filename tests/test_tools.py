@@ -60,8 +60,8 @@ async def test_tool_list_names_titles_annotations_descriptions(fake: FakeBacklog
         if not a.read_only_hint:
             assert a.destructive_hint is False and a.idempotent_hint is not None, t.name
         d = t.description or ""
-        for tag in ("<use_case>", "</use_case>", "<important_notes>", "</important_notes>", "<example>"):
-            assert tag in d, (t.name, tag)
+        # trim_tools drops the section tags the docstrings are written with; the example keeps its tag.
+        assert d and "<example>" in d and "use_case>" not in d and "important_notes>" not in d, t.name
         assert t.output_schema, t.name
     by = {t.name: t for t in tools}
     assert by["backlog_start_export"].annotations.open_world_hint is True  # type: ignore[union-attr]
@@ -126,7 +126,7 @@ async def test_tags_argument_is_constrained(fake: FakeBacklog) -> None:
         tools = {t.name: t for t in (await c.list_tools()).tools}
         for name in ("backlog_find_games", "backlog_suggest_picks"):
             t = tools[name]
-            schema = t.input_schema["properties"]["tags"]["anyOf"][0]
+            schema = t.input_schema["properties"]["tags"]
             assert (schema["maxItems"], schema["items"]["maxLength"]) == (10, 80), name
             assert "soulslike" in (t.description or "") and "unknown" in (t.description or ""), name
         assert (await c.call_tool("backlog_find_games", {"tags": ["x"] * 11})).is_error

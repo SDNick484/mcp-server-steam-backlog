@@ -46,7 +46,7 @@ from .logsafe import redact
 from .ratelimit import TokenBucket, refusal
 from .remote import request_state_security, tier
 from .tasks import spawn_task, stop_task
-from .tools import ACT_IDEMPOTENT, READ_ONLY
+from .tools import ACT_IDEMPOTENT, READ_ONLY, trim_tools
 
 log = logging.getLogger(__name__)
 
@@ -121,6 +121,7 @@ async def lifespan(server: MCPServer) -> AsyncIterator[None]:
         watch = _state.watcher = deck.DeckWatcher(settings.mqtt)
         task = spawn_task(watch.run(), name="deck watch")
         register_now_playing(server)
+        trim_tools(server)  # again, for the tool just added; a no-op on the rest
     try:
         yield
     finally:
@@ -1286,3 +1287,5 @@ TOOL_GROUPS: list[Callable[[MCPServer], None]] = [
 ]
 for _register in TOOL_GROUPS:
     _register(mcp)
+# Shorten what tools/list sends (see tools.py).
+trim_tools(mcp)

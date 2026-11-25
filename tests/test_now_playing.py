@@ -67,8 +67,9 @@ async def test_registered_with_mqtt_host_and_gone_after(
     assert t.annotations is not None and t.annotations.read_only_hint is True
     assert t.annotations.open_world_hint is False
     assert t.input_schema.get("properties", {}) == {}
-    for tag in ("<use_case>", "</use_case>", "<important_notes>", "</important_notes>", "<example>"):
-        assert tag in (t.description or "")
+    # Registered in lifespan, after the import-time trim: it is trimmed like the rest.
+    d = t.description or ""
+    assert d and "<example>" in d and "use_case>" not in d and "important_notes>" not in d
     monkeypatch.delenv("MQTT_HOST")
     async with Client(server.mcp) as c:
         assert TOOL not in {t.name for t in (await c.list_tools()).tools}
